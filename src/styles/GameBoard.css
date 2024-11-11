@@ -1,0 +1,21 @@
+.game-board-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%);
+}
+
+.game-board {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr); /* Create 9 equal columns */
+    grid-template-rows: repeat(9, 1fr);    /* Create 9 equal rows */
+    gap: 7px; /* Optional: small gap between cells */
+    width: 450px; /* Adjust size as needed */
+    height: 450px;
+  }
+
