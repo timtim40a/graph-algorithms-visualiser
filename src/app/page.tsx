@@ -1,13 +1,13 @@
 "use client";
 
-import GameBoard from "@/components/GameBoard";
+import GraphCanvas from "@/components/GraphCanvas";
+import { ReactNode } from "react";
 
 export default function Home() {
-    function handleClick(event: React.MouseEvent<HTMLButtonElement>): void {
-        event.preventDefault();
-    }
 
     return (<>
-        <GameBoard gameBoardHeight={9} gameBoardWidth={9}></GameBoard>
+        <div>
+            <GraphCanvas></GraphCanvas>
+        </div>   
     </>)
 }

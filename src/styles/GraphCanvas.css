@@ -1,0 +1,18 @@
+.canvas {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%);
+    border: 5px pink;
+}
+
+#main {
+    --node-size: 30px;
+}
+
+
