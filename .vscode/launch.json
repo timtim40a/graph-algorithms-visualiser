@@ -11,7 +11,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/src/components/GameBoard.tsx",
+            "program": "${workspaceFolder}/src/components/page.tsx",
             "outFiles": [
                 "${workspaceFolder}/**/*.js"
             ]

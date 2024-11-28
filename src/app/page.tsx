@@ -1,13 +1,15 @@
 "use client";
 
-import GraphCanvas from "@/components/GraphCanvas";
 import { ReactNode } from "react";
+import GraphCanvas from "@/components/GraphCanvas";
 
-export default function Home() {
+export default function Flow() {
 
-    return (<>
+    return (
+        <>
         <div>
-            <GraphCanvas></GraphCanvas>
-        </div>   
-    </>)
+            <GraphCanvas/>
+        </div>
+        </>
+    )
 }
