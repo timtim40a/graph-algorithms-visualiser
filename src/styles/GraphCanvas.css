@@ -15,4 +15,22 @@
     --node-size: 30px;
 }
 
+.right-sidebar {
+    position: absolute;
+    right: 0px;
+}
+
+input, 
+button {
+    margin-bottom: 6px;
+    margin-right: 6px;
+    padding: 6px;
+    font-size: small;
+}
+
+label {
+    font-size: medium;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
 

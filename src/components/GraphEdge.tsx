@@ -1,34 +1,38 @@
 import { ReactNode } from "react";
 import GraphCanvas from "./GraphCanvas";
+import { GraphEdgeProps } from "@/app/types";
 
-export type GraphEdgeProps = {
-    id: string;
-    sourceID: string;
-    targetID: string;
-    directed: boolean;
-    getNodePosition: any;
-}
-
-const GraphEdge: React.FC<GraphEdgeProps> = ({sourceID, targetID, getNodePosition, directed = false}) => {
+const GraphEdge: React.FC<GraphEdgeProps> = ({id, sourceID, targetID, getNodePosition, directed = false, activeAnimation = false}) => {
 
     const source = getNodePosition(sourceID)
     const target = getNodePosition(targetID)
 
-    if (!source || !target) {
-        console.warn(`Edge cannot be rendered: Missing node positions for ${sourceID} or ${targetID}`);
-        return null;
-    }
+    
 
     return (
+        <>
+        {sourceID != targetID ? 
         <line
+            id={id}
             x1={source.x}
             y1={source.y}
             x2={target.x}
             y2={target.y}
             stroke="black"
+            strokeWidth="3px"
             markerEnd={directed ? "url(#arrowhead)" : undefined}>
-
-        </line>
+        </line> 
+        :
+        <circle
+            id={id}
+            cx={source.x+20}
+            cy={source.y+20}
+            r="20px"
+            fillOpacity="0"
+            stroke="black"
+            strokeWidth="3px">
+        </circle>}
+        </>
     )
 }
 

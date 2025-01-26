@@ -1,15 +1,7 @@
 import { Html } from "next/document";
 import "../styles/GraphNode.css"
 import { root } from "postcss";
-
-export type GraphNodeProps = {
-    id: string;
-    value: string;
-    selected: boolean;
-    x: number;
-    y: number;
-    onClick: ((event: React.MouseEvent<HTMLDivElement>, id: string) => void);
-}
+import { GraphNodeProps } from "@/app/types";
 
 const GraphNode: React.FC<GraphNodeProps> = ({id, value, selected, x, y, onClick}) => {
 

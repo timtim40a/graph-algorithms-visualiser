@@ -27,6 +27,14 @@ body {
   }
 }
 
+label {
+  font-size: large;
+  display: flex;
+}
+
+button { 
+  display: flex;
+}
 
 
 
