@@ -4,7 +4,7 @@ const AdjacencyListElement = (edge: GraphEdgeProps) => {
 
     return (
         <>
-        <label key={"p"+edge.sourceID+edge.targetID}>{edge.sourceID + " " + edge.targetID}</label>
+        <label key={"adj"+edge.sourceID+edge.targetID+console.timeStamp}>{edge.sourceID + " " + edge.targetID}</label>
         <br></br>
         </>
     )

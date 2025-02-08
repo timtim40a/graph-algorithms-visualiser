@@ -5,6 +5,7 @@ import GraphEdge from "./GraphEdge";
 import { GraphEdgeProps, GraphNodeProps } from "@/app/types";
 import AdjacencyListInput from "./AdjacencyListInput";
 import AdjacencyListElement from "./AdjacencyListElement";
+import { buildAdjacencyList, bfs } from "@/utilities/GraphAlgorithms";
 
 type GraphCanvasProps = {
     canvasHeight?: number;
@@ -17,10 +18,26 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({canvasHeight = 200, canvasWidt
     const [selectedNodes, setSelectedNodes] = useState<string[]>(["none"]);
     const [edgeList, setEdgeList] = useState<GraphEdgeProps[]>([]);
     const [isCreatingEdge, setIsCreatingEdge] = useState<boolean>(false);
+    const [isDeletingNode, setIsDeletingNode] = useState<boolean>(false);
+
+    /*
+    0: Creating Nodes
+    1: Creating Edges
+    2: Deleting Nodes
+    3: (reserved) Deleting Edges
+    4: Altering Nodes
+    5: Altering Edges
+    */
+    const [nodeCounter, setNodeCounter] = useState<number>(0);
 
     const toggleEdgeCreation = (e: React.MouseEvent<HTMLButtonElement>) => {
         e.stopPropagation()
         setIsCreatingEdge((prevIsCreatingEdge) => !prevIsCreatingEdge)
+    }
+
+    const toggleNodeDeletion = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.stopPropagation()
+        setIsDeletingNode((prevIsDeletingNode) => !prevIsDeletingNode)
     }
 
     const getNodePosition = (id: string) => {
@@ -29,11 +46,14 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({canvasHeight = 200, canvasWidt
     }
 
     const handleNodeClick = (id: string) => {
-        if (isCreatingEdge) {
+        if (isDeletingNode) {
+            console.log("node " + id + " is being deleted")
+            handleNodeDelete(id)
+        } else if (isCreatingEdge) {
             console.log("clicked for edge: " + id)
             console.log(selectedNodes)
             console.log(selectedNodes[selectedNodes.length-1])
-            createNewEdge(selectedNodes[selectedNodes.length-1], id)
+            createNewEdge(selectedNodes[selectedNodes.length-1], id, false)
             setSelectedNodes((prevSelectedNodes) => [prevSelectedNodes[selectedNodes.length-1], id])
         } else {
             console.log("just clicked: " + id)
@@ -43,8 +63,18 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({canvasHeight = 200, canvasWidt
         }
     }
 
+    const handleNodeDelete = (idToDelete: string) => {
+        console.log(idToDelete)
+        console.log(edgeList.map((edge) => edge.targetID + " " + edge.sourceID))
+        const updateEdges = edgeList.filter((edge) => edge.targetID !== idToDelete 
+            && edge.sourceID !== idToDelete)
+        const updateNodes = nodeList.filter((node) => node.id !== idToDelete)
+        setEdgeList(updateEdges)
+        setNodeList(updateNodes)
+    }
+
     const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
-        const id = "n" + nodeList.length.toString();
+        const id = "n" + nodeCounter;
         const newNode: GraphNodeProps = {
             id,
             value: id.slice(1),
@@ -54,10 +84,11 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({canvasHeight = 200, canvasWidt
             onClick: () => handleNodeClick(id)
         };
         setNodeList((prevNodeList) => [...prevNodeList, newNode])
+        setNodeCounter((prevNodeCounter) => prevNodeCounter += 1)
         console.log("id = " + id + " x&y = " + newNode.x + " " + newNode.y)
     };
 
-    const createNewEdge = (sourceID: string, targetID: string) => {
+    const createNewEdge = (sourceID: string, targetID: string, directed: boolean) => {
         const id = "e" + sourceID + targetID;
         if (sourceID == "none" || targetID == "none") {
             console.warn(`Edge cannot be rendered: Missing node positions for ${sourceID} or ${targetID}`);
@@ -72,23 +103,70 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({canvasHeight = 200, canvasWidt
             sourceID: sourceID,
             targetID: targetID,
             activeAnimation: false,
-            directed: false,
+            directed: directed,
             getNodePosition: getNodePosition
         }
         setEdgeList((updatedEdgeList) => [...updatedEdgeList, newEdge])
+        if (!directed && sourceID != targetID) {
+            const idReverse = "e" + targetID + sourceID;
+            if (edgeList.some((edge) => edge.id == idReverse)) {
+                console.warn(`Edge cannot be rendered: Edge between ${sourceID} and ${targetID} already exists`);
+                return null;
+            }
+            const newEdgeReverse: GraphEdgeProps = {
+                id: idReverse,
+                sourceID: targetID,
+                targetID: sourceID,
+                activeAnimation: false,
+                directed: false,
+                getNodePosition: getNodePosition
+            }
+            setEdgeList((updatedEdgeList) => [...updatedEdgeList, newEdgeReverse])
+        }
+    }
+
+    const getBfsPath = (startID: string) => {
+        return bfs(startID, buildAdjacencyList(nodeList, edgeList))
+    }
+
+    const startSearchAnimation = (searchOrder: string[]) => {
+        console.log(searchOrder)
+        for (let i = 0; i < searchOrder.length - 1; i++) {
+            const edgeToAnimate = edgeList.find((edge) => edge.sourceID === searchOrder[i] && edge.targetID === searchOrder[i+1]);
+            console.log(searchOrder[i] + " " + searchOrder[i+1])
+            const updateEdges = edgeList.filter((edge) => edge.sourceID !== searchOrder[i] && edge.targetID !== searchOrder[i+1])
+            console.log(edgeToAnimate)
+            edgeToAnimate ? edgeToAnimate.activeAnimation = true : null
+            edgeToAnimate ? setEdgeList([...updateEdges, edgeToAnimate]) : null
+        }
     }
 
     useEffect(() => {
         console.log(`Edge creation mode is now: ${isCreatingEdge ? "ON" : "OFF"}`);
+        isCreatingEdge ? setIsDeletingNode(false) : null;
     }, [isCreatingEdge]); // Runs whenever isCreatingEdge changes
+
+    useEffect(() => {
+        console.log(`Node deletion mode is now: ${isDeletingNode ? "ON" : "OFF"}`);
+        isDeletingNode ? setIsCreatingEdge(false) : null;
+        setSelectedNodes(["none"]);
+    }, [isDeletingNode]); // Runs whenever isDeletingNode changes
 
     return (
         <>
-        <button onClick={(e) => toggleEdgeCreation(e)}>{isCreatingEdge ? "Edges ON" : "Edges OFF"}</button>
-        <label>
-                {`Currently selected nodes: ${selectedNodes.length == 1 ? 
-                    selectedNodes : selectedNodes[0] + " " + selectedNodes[1]}`}
-        </label>
+            <button onClick={(e) => toggleEdgeCreation(e)}>
+                {isCreatingEdge ? "Edges ON" : "Edges OFF"}
+            </button>
+            <button onClick={(e) => toggleNodeDeletion(e)}>
+                {isDeletingNode ? "Delete Nodes ON" : "Delete Nodes OFF"}
+            </button>
+            {/*<button onClick={(e) => startSearchAnimation(getBfsPath("n" + (nodeCounter-1)))}>
+                get BFS path
+            </button>*/}
+            <label>
+                    {`Currently selected nodes: ${selectedNodes.length == 1 ? 
+                        selectedNodes : selectedNodes[0] + " " + selectedNodes[1]}`}
+            </label>
         <div id="main" className="canvas" onClick={handleCanvasClick}>
             <svg
             className="edge-layer"
@@ -126,7 +204,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({canvasHeight = 200, canvasWidt
             <div className="right-sidebar">
             <AdjacencyListInput/>
             {edgeList.map((edge) => {
-                return <AdjacencyListElement
+                return <AdjacencyListElement key={edge.id + "ale"}
                 {...edge}
                 />})}
             </div>

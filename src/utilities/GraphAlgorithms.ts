@@ -9,14 +9,14 @@ export const buildAdjacencyList = (
   nodes.forEach((node) => adjacencyList.set(node.id, []));
 
   edges.forEach((edge) => {
-    const neighbors = adjacencyList.get(edge.sourceID) || [];
-    neighbors.push(edge.targetID);
-    adjacencyList.set(edge.sourceID, neighbors);
+    const neighbours = adjacencyList.get(edge.sourceID) || [];
+    neighbours.push(edge.targetID);
+    adjacencyList.set(edge.sourceID, neighbours);
 
     if (!edge.directed) {
-      const reverseNeighbors = adjacencyList.get(edge.targetID) || [];
-      reverseNeighbors.push(edge.sourceID);
-      adjacencyList.set(edge.targetID, reverseNeighbors);
+      const reverseNeighbours = adjacencyList.get(edge.targetID) || [];
+      reverseNeighbours.push(edge.sourceID);
+      adjacencyList.set(edge.targetID, reverseNeighbours);
     }
   });
 

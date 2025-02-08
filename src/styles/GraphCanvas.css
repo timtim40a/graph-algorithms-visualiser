@@ -20,6 +20,11 @@
     right: 0px;
 }
 
+.left-sidebar {
+    position: absolute;
+    left: 0px;
+}
+
 input, 
 button {
     margin-bottom: 6px;

@@ -21,6 +21,16 @@ const GraphEdge: React.FC<GraphEdgeProps> = ({id, sourceID, targetID, getNodePos
             stroke="black"
             strokeWidth="3px"
             markerEnd={directed ? "url(#arrowhead)" : undefined}>
+            {activeAnimation ?
+            <animate
+                attributeName="stroke"
+                begin="0s"
+                dur="1s"
+                keyTimes="0; 0.5; 1"
+                values="#000000;#00AA00;#00DD00"
+                fill="freeze"
+            />
+            : null}
         </line> 
         :
         <circle
