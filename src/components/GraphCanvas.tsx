@@ -5,7 +5,7 @@ import GraphEdge from "./GraphEdge";
 import { GraphEdgeProps, GraphNodeProps } from "@/app/types";
 import AdjacencyListInput from "./AdjacencyListInput";
 import AdjacencyListElement from "./AdjacencyListElement";
-import { buildAdjacencyList, bfs } from "@/utilities/GraphAlgorithms";
+import { buildAdjacencyList, bfs, dfs } from "@/utilities/GraphAlgorithms";
 
 type GraphCanvasProps = {
     canvasHeight?: number;
@@ -94,7 +94,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({canvasHeight = 200, canvasWidt
             console.warn(`Edge cannot be rendered: Missing node positions for ${sourceID} or ${targetID}`);
             return null;
         }
-        if (edgeList.some((edge) => edge.id == id)) {
+        if (edgeList.some((edge) => edge.id == id || edge.id == "e" + targetID + sourceID)) {
             console.warn(`Edge cannot be rendered: Edge between ${sourceID} and ${targetID} already exists`);
             return null;
         }
@@ -107,7 +107,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({canvasHeight = 200, canvasWidt
             getNodePosition: getNodePosition
         }
         setEdgeList((updatedEdgeList) => [...updatedEdgeList, newEdge])
-        if (!directed && sourceID != targetID) {
+        /*if (!directed && sourceID != targetID) {
             const idReverse = "e" + targetID + sourceID;
             if (edgeList.some((edge) => edge.id == idReverse)) {
                 console.warn(`Edge cannot be rendered: Edge between ${sourceID} and ${targetID} already exists`);
@@ -122,24 +122,54 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({canvasHeight = 200, canvasWidt
                 getNodePosition: getNodePosition
             }
             setEdgeList((updatedEdgeList) => [...updatedEdgeList, newEdgeReverse])
-        }
+        }*/
     }
 
     const getBfsPath = (startID: string) => {
         return bfs(startID, buildAdjacencyList(nodeList, edgeList))
     }
 
-    const startSearchAnimation = (searchOrder: string[]) => {
+    const getDfsPath = (startID: string) => {
+        return dfs(startID, buildAdjacencyList(nodeList, edgeList))
+    }
+
+    const startSearchAnimation = async (searchOrder: string[][]) => {
         console.log(searchOrder)
-        for (let i = 0; i < searchOrder.length - 1; i++) {
-            const edgeToAnimate = edgeList.find((edge) => edge.sourceID === searchOrder[i] && edge.targetID === searchOrder[i+1]);
-            console.log(searchOrder[i] + " " + searchOrder[i+1])
-            const updateEdges = edgeList.filter((edge) => edge.sourceID !== searchOrder[i] && edge.targetID !== searchOrder[i+1])
-            console.log(edgeToAnimate)
+        for (let i = 0; i < searchOrder.length; i++) {
+            const id = "e" + searchOrder[i][0] + searchOrder[i][1]
+            const idReverse = "e" + searchOrder[i][1] + searchOrder[i][0]
+            const edgeToAnimate = edgeList.find((edge) => edge.id === id || edge.id === idReverse);
+            const updateEdges = edgeList.filter((edge) => edge.id !== id && edge.id !== idReverse);
+            await new Promise(resolve => setTimeout(resolve, 1000))
             edgeToAnimate ? edgeToAnimate.activeAnimation = true : null
+            console.log(edgeToAnimate)
             edgeToAnimate ? setEdgeList([...updateEdges, edgeToAnimate]) : null
         }
+        await new Promise(resolve => setTimeout(resolve, 10000))
+        stopAnimation()
     }
+
+    const stopAnimation = () => {
+        const stoppedAnimationEdgeList = edgeList
+        stoppedAnimationEdgeList.forEach((edge) => edge.activeAnimation = false)
+        setEdgeList(stoppedAnimationEdgeList)
+    }
+
+    const deleteAll = (kind: string = "nodes") => {
+        if (kind === "nodes") {
+            setEdgeList([])
+            setNodeList([])
+            setSelectedNodes(["none"])
+            setNodeCounter(0)
+        }
+        if (kind === "edges") {
+            setEdgeList([])
+        }
+    }
+
+    useEffect(() => {
+
+    }, [edgeList])
 
     useEffect(() => {
         console.log(`Edge creation mode is now: ${isCreatingEdge ? "ON" : "OFF"}`);
@@ -160,9 +190,18 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({canvasHeight = 200, canvasWidt
             <button onClick={(e) => toggleNodeDeletion(e)}>
                 {isDeletingNode ? "Delete Nodes ON" : "Delete Nodes OFF"}
             </button>
-            {/*<button onClick={(e) => startSearchAnimation(getBfsPath("n" + (nodeCounter-1)))}>
-                get BFS path
-            </button>*/}
+            <button onClick={(e) => startSearchAnimation(getBfsPath("n" + (0)))}>
+                Get BFS path
+            </button>
+            <button onClick={(e) => startSearchAnimation(getDfsPath("n" + (0)))}>
+                Get DFS path
+            </button>
+            <button onClick={(e) => deleteAll("nodes")}>
+                Clear
+            </button>
+            <button onClick={(e) => deleteAll("edges")}>
+                Clear Edges
+            </button>
             <label>
                     {`Currently selected nodes: ${selectedNodes.length == 1 ? 
                         selectedNodes : selectedNodes[0] + " " + selectedNodes[1]}`}
@@ -185,7 +224,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({canvasHeight = 200, canvasWidt
                 sourceID={graphEdge.sourceID}
                 targetID={graphEdge.targetID}
                 directed={false}
-                activeAnimation={false}
+                activeAnimation={graphEdge.activeAnimation}
                 getNodePosition={getNodePosition}
                 />
             })}

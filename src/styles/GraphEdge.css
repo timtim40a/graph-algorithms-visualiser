@@ -1,0 +1,24 @@
+:root {
+    --just-explored-edge-colour: rgb(215,156,0);
+    --explored-edge-colour: rgb(0,156,0);
+    --non-explored-edge-colour: black;
+}
+
+.animated-edge {
+    animation: search 1s linear
+}
+
+@keyframes search {
+    from { 
+        stroke: var(--non-explored-edge-colour);
+    }
+    to {
+        stroke: var(--explored-edge-colour);
+    }
+}
+
+
+.edge {
+    stroke: black;
+
+}

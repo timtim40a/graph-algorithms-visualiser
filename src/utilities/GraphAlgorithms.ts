@@ -27,21 +27,51 @@ export const buildAdjacencyList = (
 export const bfs = (
   startID: string,
   adjacencyList: Map<string, string[]>
-): string[] => {
+): [string, string][] => {
   const visited = new Set<string>();
-  const searchQueue: string[] = [startID];
-  const finalPath: string[] = [];
+  const queue: string[] = [startID];
+  const edges: [string, string][] = [];
 
-  while (searchQueue.length > 0) {
-    const current = searchQueue.shift()!;
+  while (queue.length > 0) {
+    const current = queue.shift()!;
     if (!visited.has(current)) {
       visited.add(current);
-      finalPath.push(current);
 
       const neighbors = adjacencyList.get(current) || [];
-      searchQueue.push(...neighbors.filter((neighbor) => !visited.has(neighbor)));
+      for (const neighbor of neighbors) {
+        if (!visited.has(neighbor)) {
+          edges.push([current, neighbor]); // Track traversed edge (current → neighbor)
+          queue.push(neighbor);
+        }
+      }
     }
   }
 
-  return finalPath;
+  return edges;
+};
+
+export const dfs = (
+  startID: string,
+  adjacencyList: Map<string, string[]>
+): [string, string][] => {
+  const visited = new Set<string>();
+  const edges: [string, string][] = [];
+
+  const dfsHelper = (node: string) => {
+    if (!visited.has(node)) {
+      visited.add(node);
+
+      const neighbors = adjacencyList.get(node) || [];
+      for (const neighbor of neighbors) {
+        if (!visited.has(neighbor)) {
+          edges.push([node, neighbor]); // Track edges
+          dfsHelper(neighbor);
+        }
+      }
+    }
+  };
+
+  dfsHelper(startID);
+  console.log(edges)
+  return edges;
 };
