@@ -16,5 +16,8 @@
 
 .selected {
     border: 2px solid cornflowerblue;
-    border-radius: 50%;
+}
+
+.on-frontier {
+    border: 2px solid rgb(0,156,0);
 }

@@ -27,15 +27,17 @@ export const buildAdjacencyList = (
 export const bfs = (
   startID: string,
   adjacencyList: Map<string, string[]>
-): [string, string][] => {
+): { nodes: string[]; edges: [string, string][] } => {
   const visited = new Set<string>();
   const queue: string[] = [startID];
+  const nodes: string[] = [];
   const edges: [string, string][] = [];
 
   while (queue.length > 0) {
     const current = queue.shift()!;
     if (!visited.has(current)) {
       visited.add(current);
+      nodes.push(current);
 
       const neighbors = adjacencyList.get(current) || [];
       for (const neighbor of neighbors) {
@@ -47,19 +49,21 @@ export const bfs = (
     }
   }
 
-  return edges;
+  return { nodes, edges };
 };
 
 export const dfs = (
   startID: string,
   adjacencyList: Map<string, string[]>
-): [string, string][] => {
+): { nodes: string[]; edges: [string, string][] } => {
   const visited = new Set<string>();
+  const nodes: string[] = [];
   const edges: [string, string][] = [];
 
   const dfsHelper = (node: string) => {
     if (!visited.has(node)) {
       visited.add(node);
+      nodes.push(node);
 
       const neighbors = adjacencyList.get(node) || [];
       for (const neighbor of neighbors) {
@@ -73,5 +77,49 @@ export const dfs = (
 
   dfsHelper(startID);
   console.log(edges)
-  return edges;
+  return {nodes, edges};
+};
+
+export const dijkstra = (
+  startID: string,
+  targetID: string,
+  adjacencyList: Map<string, { id: string; weight: number }[]>
+): { distance: number; path: string[] } => {
+  const distances: Map<string, number> = new Map();
+  const previous: Map<string, string | null> = new Map();
+  const priorityQueue: { id: string; distance: number }[] = [];
+
+  adjacencyList.forEach((_, node) => {
+    distances.set(node, Infinity);
+    previous.set(node, null);
+  });
+
+  distances.set(startID, 0);
+  priorityQueue.push({ id: startID, distance: 0 });
+
+  while (priorityQueue.length > 0) {
+    priorityQueue.sort((a, b) => a.distance - b.distance);
+    const { id: currentNode } = priorityQueue.shift()!;
+
+    if (currentNode === targetID) break;
+
+    for (const neighbor of adjacencyList.get(currentNode) || []) {
+      const newDist = distances.get(currentNode)! + neighbor.weight;
+
+      if (newDist < distances.get(neighbor.id)!) {
+        distances.set(neighbor.id, newDist);
+        previous.set(neighbor.id, currentNode);
+        priorityQueue.push({ id: neighbor.id, distance: newDist });
+      }
+    }
+  }
+
+  let path = [];
+  let step: string | null = targetID;
+  while (step) {
+    path.unshift(step);
+    step = previous.get(step)!;
+  }
+
+  return { distance: distances.get(targetID)!, path };
 };

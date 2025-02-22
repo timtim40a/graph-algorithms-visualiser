@@ -5,7 +5,7 @@ import GraphEdge from "./GraphEdge";
 import { GraphEdgeProps, GraphNodeProps } from "@/app/types";
 import AdjacencyListInput from "./AdjacencyListInput";
 import AdjacencyListElement from "./AdjacencyListElement";
-import { buildAdjacencyList, bfs, dfs } from "@/utilities/GraphAlgorithms";
+import { buildAdjacencyList, bfs, dfs, dijkstra } from "@/utilities/GraphAlgorithms";
 
 type GraphCanvasProps = {
     canvasHeight?: number;
@@ -19,6 +19,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({canvasHeight = 200, canvasWidt
     const [edgeList, setEdgeList] = useState<GraphEdgeProps[]>([]);
     const [isCreatingEdge, setIsCreatingEdge] = useState<boolean>(false);
     const [isDeletingNode, setIsDeletingNode] = useState<boolean>(false);
+    const [isEditModeOn, setIsEditModeOn] = useState<boolean>(false);
 
     /*
     0: Creating Nodes
@@ -38,6 +39,11 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({canvasHeight = 200, canvasWidt
     const toggleNodeDeletion = (e: React.MouseEvent<HTMLButtonElement>) => {
         e.stopPropagation()
         setIsDeletingNode((prevIsDeletingNode) => !prevIsDeletingNode)
+    }
+
+    const toggleEditMode = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.stopPropagation()
+        setIsEditModeOn((prevIsEditModeOn) => !prevIsEditModeOn)
     }
 
     const getNodePosition = (id: string) => {
@@ -79,6 +85,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({canvasHeight = 200, canvasWidt
             id,
             value: id.slice(1),
             selected: false,
+            onFrontier: false,
             x: e.clientX,
             y: e.clientY,
             onClick: () => handleNodeClick(id)
@@ -102,6 +109,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({canvasHeight = 200, canvasWidt
             id,
             sourceID: sourceID,
             targetID: targetID,
+            weight: 1,
             activeAnimation: false,
             directed: directed,
             getNodePosition: getNodePosition
@@ -133,13 +141,19 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({canvasHeight = 200, canvasWidt
         return dfs(startID, buildAdjacencyList(nodeList, edgeList))
     }
 
-    const startSearchAnimation = async (searchOrder: string[][]) => {
-        console.log(searchOrder)
-        for (let i = 0; i < searchOrder.length; i++) {
-            const id = "e" + searchOrder[i][0] + searchOrder[i][1]
-            const idReverse = "e" + searchOrder[i][1] + searchOrder[i][0]
-            const edgeToAnimate = edgeList.find((edge) => edge.id === id || edge.id === idReverse);
-            const updateEdges = edgeList.filter((edge) => edge.id !== id && edge.id !== idReverse);
+    //const getDijPath = (sourceID: string, targetID: string) => {
+    //    return dijkstra(sourceID, targetID, buildAdjacencyList(nodeList, edgeList))
+    //}
+
+    const startSearchAnimation = async (searchOrder: { nodes: string[]; edges: [string, string][] }) => {
+        const searchOrderNodes = searchOrder.nodes;
+        const searchOrderEdges = searchOrder.edges;
+        console.log(searchOrderEdges)
+        for (let i = 0; i < searchOrderEdges.length; i++) {
+            const edgeID = "e" + searchOrderEdges[i][0] + searchOrderEdges[i][1]
+            const edgeReverseID = "e" + searchOrderEdges[i][1] + searchOrderEdges[i][0]
+            const edgeToAnimate = edgeList.find((edge) => edge.id === edgeID || edge.id === edgeReverseID);
+            const updateEdges = edgeList.filter((edge) => edge.id !== edgeID && edge.id !== edgeReverseID);
             await new Promise(resolve => setTimeout(resolve, 1000))
             edgeToAnimate ? edgeToAnimate.activeAnimation = true : null
             console.log(edgeToAnimate)
@@ -168,8 +182,11 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({canvasHeight = 200, canvasWidt
     }
 
     useEffect(() => {
-
-    }, [edgeList])
+        console.log(`Editing mode is now: ${isCreatingEdge ? "ON" : "OFF"}`);
+        isEditModeOn ? null : setIsDeletingNode(false);
+        isEditModeOn ? null : setIsCreatingEdge(false);
+        setSelectedNodes(["none"]);
+    }, [isEditModeOn])
 
     useEffect(() => {
         console.log(`Edge creation mode is now: ${isCreatingEdge ? "ON" : "OFF"}`);
@@ -184,16 +201,21 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({canvasHeight = 200, canvasWidt
 
     return (
         <>
+            <button onClick={(e) => toggleEditMode(e)}>
+                {isEditModeOn ? "Edit Mode ON" : "Edit Mode OFF"}
+            </button>
+            {isEditModeOn ? <>
             <button onClick={(e) => toggleEdgeCreation(e)}>
                 {isCreatingEdge ? "Edges ON" : "Edges OFF"}
             </button>
             <button onClick={(e) => toggleNodeDeletion(e)}>
                 {isDeletingNode ? "Delete Nodes ON" : "Delete Nodes OFF"}
-            </button>
-            <button onClick={(e) => startSearchAnimation(getBfsPath("n" + (0)))}>
+            </button> 
+            </> : null}
+            <button onClick={(e) => startSearchAnimation(getBfsPath(selectedNodes[selectedNodes.length-1]))}>
                 Get BFS path
             </button>
-            <button onClick={(e) => startSearchAnimation(getDfsPath("n" + (0)))}>
+            <button onClick={(e) => startSearchAnimation(getDfsPath(selectedNodes[selectedNodes.length-1]))}>
                 Get DFS path
             </button>
             <button onClick={(e) => deleteAll("nodes")}>
@@ -224,6 +246,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({canvasHeight = 200, canvasWidt
                 sourceID={graphEdge.sourceID}
                 targetID={graphEdge.targetID}
                 directed={false}
+                weight={graphEdge.weight}
                 activeAnimation={graphEdge.activeAnimation}
                 getNodePosition={getNodePosition}
                 />
@@ -235,6 +258,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({canvasHeight = 200, canvasWidt
                 id={graphNode.id}
                 value={graphNode.value}
                 selected={selectedNodes.includes(graphNode.id) ? true : false} 
+                onFrontier={false}
                 x={graphNode.x} 
                 y={graphNode.y} 
                 onClick={() => handleNodeClick(graphNode.id)}/>})}
