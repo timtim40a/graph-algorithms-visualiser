@@ -4,18 +4,18 @@ import { GraphEdgeProps, GraphNodeProps } from '@/app/types'; // Update the path
 export const buildAdjacencyList = (
   nodes: GraphNodeProps[],
   edges: GraphEdgeProps[]
-): Map<string, string[]> => {
-  const adjacencyList = new Map<string, string[]>();
+): Map<string, {id: string, weight: number}[]> => {
+  const adjacencyList = new Map<string, {id: string, weight: number}[]>();
   nodes.forEach((node) => adjacencyList.set(node.id, []));
 
   edges.forEach((edge) => {
     const neighbours = adjacencyList.get(edge.sourceID) || [];
-    neighbours.push(edge.targetID);
+    neighbours.push({id:edge.targetID, weight:edge.weight});
     adjacencyList.set(edge.sourceID, neighbours);
 
     if (!edge.directed) {
       const reverseNeighbours = adjacencyList.get(edge.targetID) || [];
-      reverseNeighbours.push(edge.sourceID);
+      reverseNeighbours.push({id:edge.sourceID, weight:edge.weight});
       adjacencyList.set(edge.targetID, reverseNeighbours);
     }
   });
@@ -26,7 +26,7 @@ export const buildAdjacencyList = (
 // BFS Implementation
 export const bfs = (
   startID: string,
-  adjacencyList: Map<string, string[]>
+  adjacencyList: Map<string, { id: string; weight: number }[]>
 ): { nodes: string[]; edges: [string, string][] } => {
   const visited = new Set<string>();
   const queue: string[] = [startID];
@@ -41,9 +41,9 @@ export const bfs = (
 
       const neighbors = adjacencyList.get(current) || [];
       for (const neighbor of neighbors) {
-        if (!visited.has(neighbor)) {
-          edges.push([current, neighbor]); // Track traversed edge (current → neighbor)
-          queue.push(neighbor);
+        if (!visited.has(neighbor.id)) {
+          edges.push([current, neighbor.id]); // Track traversed edge (current → neighbor)
+          queue.push(neighbor.id);
         }
       }
     }
@@ -54,7 +54,7 @@ export const bfs = (
 
 export const dfs = (
   startID: string,
-  adjacencyList: Map<string, string[]>
+  adjacencyList: Map<string, { id: string; weight: number }[]>
 ): { nodes: string[]; edges: [string, string][] } => {
   const visited = new Set<string>();
   const nodes: string[] = [];
@@ -67,9 +67,9 @@ export const dfs = (
 
       const neighbors = adjacencyList.get(node) || [];
       for (const neighbor of neighbors) {
-        if (!visited.has(neighbor)) {
-          edges.push([node, neighbor]); // Track edges
-          dfsHelper(neighbor);
+        if (!visited.has(neighbor.id)) {
+          edges.push([node, neighbor.id]); // Track edges
+          dfsHelper(neighbor.id);
         }
       }
     }
@@ -84,7 +84,7 @@ export const dijkstra = (
   startID: string,
   targetID: string,
   adjacencyList: Map<string, { id: string; weight: number }[]>
-): { distance: number; path: string[] } => {
+): { distance: number; nodes: string[]; edges: [string, string][] } => {
   const distances: Map<string, number> = new Map();
   const previous: Map<string, string | null> = new Map();
   const priorityQueue: { id: string; distance: number }[] = [];
@@ -114,12 +114,24 @@ export const dijkstra = (
     }
   }
 
-  let path = [];
-  let step: string | null = targetID;
-  while (step) {
-    path.unshift(step);
-    step = previous.get(step)!;
+  // Reconstruct path as nodes and edges
+  const nodes: string[] = [];
+  const edges: [string, string][] = [];
+  let step: string = targetID;
+
+  while (previous.get(step)) {
+    const from = previous.get(step)!;
+    nodes.unshift(step);
+    edges.unshift([from, step]); // Store edge as [from, to]
+    step = from;
   }
 
-  return { distance: distances.get(targetID)!, path };
+  if (step) nodes.unshift(step); // Add start node
+
+  return {
+    distance: distances.get(targetID)!,
+    nodes,
+    edges,
+  };
 };
+

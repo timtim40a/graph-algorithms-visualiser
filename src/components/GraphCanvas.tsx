@@ -5,7 +5,7 @@ import GraphEdge from "./GraphEdge";
 import { GraphEdgeProps } from "@/app/types";
 import AdjacencyListInput from "./AdjacencyListInput";
 import AdjacencyListElement from "./AdjacencyListElement";
-import { buildAdjacencyList, bfs, dfs } from "@/utilities/GraphAlgorithms";
+import { buildAdjacencyList, bfs, dfs, dijkstra } from "@/utilities/GraphAlgorithms";
 import useGraphStore from "@/store/useGraphStore";
 
 type GraphCanvasProps = {
@@ -41,6 +41,8 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
             handleNodeDelete(id);
         } else if (isCreatingEdge) {
             createNewEdge(selectedNodes[selectedNodes.length - 1], id, false);
+            setSelectedNodes((prev) => [prev[prev.length - 1], id]);
+        } else if (!isEditModeOn) {
             setSelectedNodes((prev) => [prev[prev.length - 1], id]);
         } else {
             setSelectedNodes((prev) => (prev.includes(id) ? ["none"] : [id]));
@@ -86,11 +88,17 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
         return dfs(startID, buildAdjacencyList(nodes, edges))
     }
     
-    //const getDijPath = (sourceID: string, targetID: string) => {
-    //    return dijkstra(sourceID, targetID, buildAdjacencyList(nodeList, edgeList))
-    //}
+    const getDijPath = (sourceID: string, targetID: string) => {
+        if (sourceID === targetID) {
+            console.warn("only one node was selected: TWO required");
+            return null;
+        }
+        return dijkstra(sourceID, targetID, buildAdjacencyList(nodes, edges))
+    }
 
-    const startSearchAnimation = async (searchOrder: { nodes: string[]; edges: [string, string][] }) => {
+    const startSearchAnimation = async (searchOrder: { nodes: string[]; edges: [string, string][] } | null) => {
+        if (!searchOrder) return;
+        stopAnimation();
         const searchOrderNodes = searchOrder.nodes;
         const searchOrderEdges = searchOrder.edges;
         console.log(searchOrderEdges)
@@ -147,21 +155,27 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
 
     return (
         <>
-            <button onClick={toggleEditMode}>{isEditModeOn ? "Edit Mode ON" : "Edit Mode OFF"}</button>
-            {isEditModeOn && (
+            <button onClick={toggleEditMode} className={isEditModeOn ? "button pressed" : "button not-pressed"}>{isEditModeOn ? "Edit Mode ON" : "Edit Mode OFF"}</button>
+            {isEditModeOn ? (
                 <>
-                    <button onClick={toggleEdgeCreation}>{isCreatingEdge ? "Edges ON" : "Edges OFF"}</button>
-                    <button onClick={toggleNodeDeletion}>{isDeletingNode ? "Delete Nodes ON" : "Delete Nodes OFF"}</button>
+                    <button onClick={toggleEdgeCreation} className={isCreatingEdge ? "button pressed" : "button not-pressed"}>{isCreatingEdge ? "Edges ON" : "Edges OFF"}</button>
+                    <button onClick={toggleNodeDeletion} className={isDeletingNode ? "button pressed" : "button not-pressed"}>{isDeletingNode ? "Delete Nodes ON" : "Delete Nodes OFF"}</button>
+                    <button onClick={() => deleteAll('nodes')}>Clear</button>
+                    <button onClick={() => deleteAll('edges')}>Clear Edges</button>
+                </>
+            ) : (
+                <>
+                    <button onClick={() => startSearchAnimation(getBfsPath(selectedNodes[selectedNodes.length-1]))}>
+                        Get BFS path
+                    </button>
+                    <button onClick={() => startSearchAnimation(getDfsPath(selectedNodes[selectedNodes.length-1]))}>
+                        Get DFS path
+                    </button>
+                    <button onClick={() => startSearchAnimation(getDijPath(selectedNodes[0],selectedNodes[selectedNodes.length-1]))}>
+                        Get Dijkstra path
+                    </button>
                 </>
             )}
-            <button onClick={() => startSearchAnimation(getBfsPath(selectedNodes[selectedNodes.length-1]))}>
-                Get BFS path
-            </button>
-            <button onClick={() => startSearchAnimation(getDfsPath(selectedNodes[selectedNodes.length-1]))}>
-                Get DFS path
-            </button>
-            <button onClick={() => deleteAll('nodes')}>Clear</button>
-            <button onClick={() => deleteAll('edges')}>Clear Edges</button>
             <label>
                 {`Currently selected nodes: ${selectedNodes.length === 1 ? selectedNodes[0] : selectedNodes.join(" ")}`}
             </label>
