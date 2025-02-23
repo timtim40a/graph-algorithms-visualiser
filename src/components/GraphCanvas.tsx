@@ -1,98 +1,69 @@
-import React, { useState, MouseEvent, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import "../styles/GraphCanvas.css";
 import GraphNode from "./GraphNode";
 import GraphEdge from "./GraphEdge";
-import { GraphEdgeProps, GraphNodeProps } from "@/app/types";
+import { GraphEdgeProps } from "@/app/types";
 import AdjacencyListInput from "./AdjacencyListInput";
 import AdjacencyListElement from "./AdjacencyListElement";
-import { buildAdjacencyList, bfs, dfs, dijkstra } from "@/utilities/GraphAlgorithms";
+import { buildAdjacencyList, bfs, dfs } from "@/utilities/GraphAlgorithms";
+import useGraphStore from "@/store/useGraphStore";
 
 type GraphCanvasProps = {
     canvasHeight?: number;
     canvasWidth?: number;
 };
 
-const GraphCanvas: React.FC<GraphCanvasProps> = ({canvasHeight = 200, canvasWidth = 200}) => {
-
-    const [nodeList, setNodeList] = useState<GraphNodeProps[]>([]);
+const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWidth = 200 }) => {
+    const { nodes, edges, addNode, removeNode, addEdge, removeEdge, alterEdge, switchNodeSelection } = useGraphStore();
     const [selectedNodes, setSelectedNodes] = useState<string[]>(["none"]);
-    const [edgeList, setEdgeList] = useState<GraphEdgeProps[]>([]);
     const [isCreatingEdge, setIsCreatingEdge] = useState<boolean>(false);
     const [isDeletingNode, setIsDeletingNode] = useState<boolean>(false);
     const [isEditModeOn, setIsEditModeOn] = useState<boolean>(false);
-
-    /*
-    0: Creating Nodes
-    1: Creating Edges
-    2: Deleting Nodes
-    3: (reserved) Deleting Edges
-    4: Altering Nodes
-    5: Altering Edges
-    */
     const [nodeCounter, setNodeCounter] = useState<number>(0);
 
     const toggleEdgeCreation = (e: React.MouseEvent<HTMLButtonElement>) => {
-        e.stopPropagation()
-        setIsCreatingEdge((prevIsCreatingEdge) => !prevIsCreatingEdge)
-    }
+        e.stopPropagation();
+        setIsCreatingEdge((prev) => !prev);
+    };
 
     const toggleNodeDeletion = (e: React.MouseEvent<HTMLButtonElement>) => {
-        e.stopPropagation()
-        setIsDeletingNode((prevIsDeletingNode) => !prevIsDeletingNode)
-    }
+        e.stopPropagation();
+        setIsDeletingNode((prev) => !prev);
+    };
 
     const toggleEditMode = (e: React.MouseEvent<HTMLButtonElement>) => {
-        e.stopPropagation()
-        setIsEditModeOn((prevIsEditModeOn) => !prevIsEditModeOn)
-    }
-
-    const getNodePosition = (id: string) => {
-        const node = nodeList.find((n) => n.id == id);
-        return node ? {x: node.x, y: node.y} : null;
-    }
+        e.stopPropagation();
+        setIsEditModeOn((prev) => !prev);
+    };
 
     const handleNodeClick = (id: string) => {
         if (isDeletingNode) {
-            console.log("node " + id + " is being deleted")
-            handleNodeDelete(id)
+            handleNodeDelete(id);
         } else if (isCreatingEdge) {
-            console.log("clicked for edge: " + id)
-            console.log(selectedNodes)
-            console.log(selectedNodes[selectedNodes.length-1])
-            createNewEdge(selectedNodes[selectedNodes.length-1], id, false)
-            setSelectedNodes((prevSelectedNodes) => [prevSelectedNodes[selectedNodes.length-1], id])
+            createNewEdge(selectedNodes[selectedNodes.length - 1], id, false);
+            setSelectedNodes((prev) => [prev[prev.length - 1], id]);
         } else {
-            console.log("just clicked: " + id)
-            setSelectedNodes((prevSelectedNode) => 
-                prevSelectedNode.includes(id) ? ["none"] : [id]
-            )
+            setSelectedNodes((prev) => (prev.includes(id) ? ["none"] : [id]));
         }
-    }
+    };
 
     const handleNodeDelete = (idToDelete: string) => {
         console.log(idToDelete)
-        console.log(edgeList.map((edge) => edge.targetID + " " + edge.sourceID))
-        const updateEdges = edgeList.filter((edge) => edge.targetID !== idToDelete 
+        console.log(edges.map((edge) => edge.targetID + " " + edge.sourceID))
+        const updateEdges = edges.filter((edge) => edge.targetID === idToDelete 
             && edge.sourceID !== idToDelete)
-        const updateNodes = nodeList.filter((node) => node.id !== idToDelete)
-        setEdgeList(updateEdges)
-        setNodeList(updateNodes)
+        const updateNodes = nodes.filter((node) => node.id === idToDelete)
+        updateEdges.forEach((edge) => removeEdge(edge.id))
+        updateNodes.forEach((node) => removeNode(node.id))
     }
 
+
     const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
-        const id = "n" + nodeCounter;
-        const newNode: GraphNodeProps = {
-            id,
-            value: id.slice(1),
-            selected: false,
-            onFrontier: false,
-            x: e.clientX,
-            y: e.clientY,
-            onClick: () => handleNodeClick(id)
-        };
-        setNodeList((prevNodeList) => [...prevNodeList, newNode])
-        setNodeCounter((prevNodeCounter) => prevNodeCounter += 1)
-        console.log("id = " + id + " x&y = " + newNode.x + " " + newNode.y)
+        if (isEditModeOn) {
+            const id = "n" + nodeCounter;
+            addNode(id, id.slice(1), e.clientX, e.clientY, () => handleNodeClick(id));
+            setNodeCounter((prev) => prev + 1);
+        }
     };
 
     const createNewEdge = (sourceID: string, targetID: string, directed: boolean) => {
@@ -101,46 +72,20 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({canvasHeight = 200, canvasWidt
             console.warn(`Edge cannot be rendered: Missing node positions for ${sourceID} or ${targetID}`);
             return null;
         }
-        if (edgeList.some((edge) => edge.id == id || edge.id == "e" + targetID + sourceID)) {
+        if (edges.some((edge) => edge.id == id || edge.id == "e" + targetID + sourceID)) {
             console.warn(`Edge cannot be rendered: Edge between ${sourceID} and ${targetID} already exists`);
             return null;
         }
-        const newEdge: GraphEdgeProps = {
-            id,
-            sourceID: sourceID,
-            targetID: targetID,
-            weight: 1,
-            activeAnimation: false,
-            directed: directed,
-            getNodePosition: getNodePosition
-        }
-        setEdgeList((updatedEdgeList) => [...updatedEdgeList, newEdge])
-        /*if (!directed && sourceID != targetID) {
-            const idReverse = "e" + targetID + sourceID;
-            if (edgeList.some((edge) => edge.id == idReverse)) {
-                console.warn(`Edge cannot be rendered: Edge between ${sourceID} and ${targetID} already exists`);
-                return null;
-            }
-            const newEdgeReverse: GraphEdgeProps = {
-                id: idReverse,
-                sourceID: targetID,
-                targetID: sourceID,
-                activeAnimation: false,
-                directed: false,
-                getNodePosition: getNodePosition
-            }
-            setEdgeList((updatedEdgeList) => [...updatedEdgeList, newEdgeReverse])
-        }*/
-    }
+        addEdge(id, sourceID, targetID, 1, directed, false)}
 
     const getBfsPath = (startID: string) => {
-        return bfs(startID, buildAdjacencyList(nodeList, edgeList))
+        return bfs(startID, buildAdjacencyList(nodes, edges))
     }
-
+    
     const getDfsPath = (startID: string) => {
-        return dfs(startID, buildAdjacencyList(nodeList, edgeList))
+        return dfs(startID, buildAdjacencyList(nodes, edges))
     }
-
+    
     //const getDijPath = (sourceID: string, targetID: string) => {
     //    return dijkstra(sourceID, targetID, buildAdjacencyList(nodeList, edgeList))
     //}
@@ -152,41 +97,38 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({canvasHeight = 200, canvasWidt
         for (let i = 0; i < searchOrderEdges.length; i++) {
             const edgeID = "e" + searchOrderEdges[i][0] + searchOrderEdges[i][1]
             const edgeReverseID = "e" + searchOrderEdges[i][1] + searchOrderEdges[i][0]
-            const edgeToAnimate = edgeList.find((edge) => edge.id === edgeID || edge.id === edgeReverseID);
-            const updateEdges = edgeList.filter((edge) => edge.id !== edgeID && edge.id !== edgeReverseID);
+            const edgeToAnimate = edges.find((edge) => edge.id === edgeID || edge.id === edgeReverseID);
+            edgeToAnimate ? alterEdge(edgeToAnimate.id, {activeAnimation: true}) : null
             await new Promise(resolve => setTimeout(resolve, 1000))
-            edgeToAnimate ? edgeToAnimate.activeAnimation = true : null
             console.log(edgeToAnimate)
-            edgeToAnimate ? setEdgeList([...updateEdges, edgeToAnimate]) : null
         }
         await new Promise(resolve => setTimeout(resolve, 10000))
         stopAnimation()
     }
 
     const stopAnimation = () => {
-        const stoppedAnimationEdgeList = edgeList
-        stoppedAnimationEdgeList.forEach((edge) => edge.activeAnimation = false)
-        setEdgeList(stoppedAnimationEdgeList)
+        edges.forEach((edge) => alterEdge(edge.id, {activeAnimation: false}))
     }
 
     const deleteAll = (kind: string = "nodes") => {
         if (kind === "nodes") {
-            setEdgeList([])
-            setNodeList([])
+            edges.forEach((edge) => removeEdge(edge.id))
+            nodes.forEach((node) => removeNode(node.id))
             setSelectedNodes(["none"])
             setNodeCounter(0)
         }
         if (kind === "edges") {
-            setEdgeList([])
+            edges.forEach((edge) => removeEdge(edge.id))
         }
     }
 
     useEffect(() => {
-        console.log(`Editing mode is now: ${isCreatingEdge ? "ON" : "OFF"}`);
-        isEditModeOn ? null : setIsDeletingNode(false);
-        isEditModeOn ? null : setIsCreatingEdge(false);
+        if (!isEditModeOn) {
+            setIsDeletingNode(false);
+            setIsCreatingEdge(false);
+        }
         setSelectedNodes(["none"]);
-    }, [isEditModeOn])
+    }, [isEditModeOn]);
 
     useEffect(() => {
         console.log(`Edge creation mode is now: ${isCreatingEdge ? "ON" : "OFF"}`);
@@ -199,81 +141,48 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({canvasHeight = 200, canvasWidt
         setSelectedNodes(["none"]);
     }, [isDeletingNode]); // Runs whenever isDeletingNode changes
 
+    useEffect(() => {
+        switchNodeSelection(selectedNodes)
+    }, [selectedNodes])
+
     return (
         <>
-            <button onClick={(e) => toggleEditMode(e)}>
-                {isEditModeOn ? "Edit Mode ON" : "Edit Mode OFF"}
-            </button>
-            {isEditModeOn ? <>
-            <button onClick={(e) => toggleEdgeCreation(e)}>
-                {isCreatingEdge ? "Edges ON" : "Edges OFF"}
-            </button>
-            <button onClick={(e) => toggleNodeDeletion(e)}>
-                {isDeletingNode ? "Delete Nodes ON" : "Delete Nodes OFF"}
-            </button> 
-            </> : null}
-            <button onClick={(e) => startSearchAnimation(getBfsPath(selectedNodes[selectedNodes.length-1]))}>
+            <button onClick={toggleEditMode}>{isEditModeOn ? "Edit Mode ON" : "Edit Mode OFF"}</button>
+            {isEditModeOn && (
+                <>
+                    <button onClick={toggleEdgeCreation}>{isCreatingEdge ? "Edges ON" : "Edges OFF"}</button>
+                    <button onClick={toggleNodeDeletion}>{isDeletingNode ? "Delete Nodes ON" : "Delete Nodes OFF"}</button>
+                </>
+            )}
+            <button onClick={() => startSearchAnimation(getBfsPath(selectedNodes[selectedNodes.length-1]))}>
                 Get BFS path
             </button>
-            <button onClick={(e) => startSearchAnimation(getDfsPath(selectedNodes[selectedNodes.length-1]))}>
+            <button onClick={() => startSearchAnimation(getDfsPath(selectedNodes[selectedNodes.length-1]))}>
                 Get DFS path
             </button>
-            <button onClick={(e) => deleteAll("nodes")}>
-                Clear
-            </button>
-            <button onClick={(e) => deleteAll("edges")}>
-                Clear Edges
-            </button>
+            <button onClick={() => deleteAll('nodes')}>Clear</button>
+            <button onClick={() => deleteAll('edges')}>Clear Edges</button>
             <label>
-                    {`Currently selected nodes: ${selectedNodes.length == 1 ? 
-                        selectedNodes : selectedNodes[0] + " " + selectedNodes[1]}`}
+                {`Currently selected nodes: ${selectedNodes.length === 1 ? selectedNodes[0] : selectedNodes.join(" ")}`}
             </label>
-        <div id="main" className="canvas" onClick={handleCanvasClick}>
-            <svg
-            className="edge-layer"
-            style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "100%",
-                height: "100%",
-                pointerEvents: "none", // for SVG layer to not block mouse events for the canvas
-            }}>
-            {edgeList.map((graphEdge) => {
-                return <GraphEdge
-                key={graphEdge.id}
-                id={graphEdge.id}
-                sourceID={graphEdge.sourceID}
-                targetID={graphEdge.targetID}
-                directed={false}
-                weight={graphEdge.weight}
-                activeAnimation={graphEdge.activeAnimation}
-                getNodePosition={getNodePosition}
-                />
-            })}
-            </svg>
-            {nodeList.map((graphNode) => {
-            return <GraphNode 
-                key={graphNode.id}
-                id={graphNode.id}
-                value={graphNode.value}
-                selected={selectedNodes.includes(graphNode.id) ? true : false} 
-                onFrontier={false}
-                x={graphNode.x} 
-                y={graphNode.y} 
-                onClick={() => handleNodeClick(graphNode.id)}/>})}
-            
-            
-            <div className="right-sidebar">
-            <AdjacencyListInput/>
-            {edgeList.map((edge) => {
-                return <AdjacencyListElement key={edge.id + "ale"}
-                {...edge}
-                />})}
+            <div id="main" className="canvas" onClick={handleCanvasClick}>
+                <svg className="edge-layer" style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none" }}>
+                    {edges.map((edge) => (
+                        <GraphEdge key={edge.id} {...edge} />
+                    ))}
+                </svg>
+                {nodes.map((node) => (
+                    <GraphNode key={node.id} {...node} onClick={() => handleNodeClick(node.id)}/>
+                ))}
             </div>
-        </div>
+            <div className="right-sidebar">
+                    <AdjacencyListInput />
+                    {edges.map((edge) => (
+                        <AdjacencyListElement key={edge.id + "ale"} {...edge} />
+                    ))}
+            </div>
         </>
-    )
-}
+    );
+};
 
-export default GraphCanvas
+export default GraphCanvas;

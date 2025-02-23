@@ -4,8 +4,16 @@ import { GraphEdgeProps } from "@/app/types";
 import { keyframes, motion } from "framer-motion"
 import "../styles/GraphEdge.css";
 import { text } from "stream/consumers";
+import useGraphStore from "@/store/useGraphStore";
 
-const GraphEdge: React.FC<GraphEdgeProps> = ({id, sourceID, targetID, weight, getNodePosition, directed = false, activeAnimation = false}) => {
+const GraphEdge: React.FC<GraphEdgeProps> = ({id, sourceID, targetID, weight, directed = false, activeAnimation = false}) => {
+
+    const { nodes } = useGraphStore()
+    
+    const getNodePosition = (id: string) => {
+        const node = nodes.find((n) => n.id === id);
+        return node ? { x: node.x, y: node.y } : {x:0, y:0};
+    };
 
     const source = getNodePosition(sourceID)
     const target = getNodePosition(targetID)
@@ -13,6 +21,8 @@ const GraphEdge: React.FC<GraphEdgeProps> = ({id, sourceID, targetID, weight, ge
     const sourceY = source.y
     const targetX = target.x
     const targetY = target.y
+
+    
 
     
 

@@ -14,6 +14,5 @@ export type GraphEdgeProps = {
     targetID: string;
     weight: number;
     directed: boolean;
-    activeAnimation: boolean;
-    getNodePosition: any;
+    activeAnimation: boolean
 }

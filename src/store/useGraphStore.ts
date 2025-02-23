@@ -1,0 +1,104 @@
+/* This is the key storage file for all of the session related data including graph's current state, 
+nodes and edges. Types and the functions to alter the state are declared here. Written with Zustand.*/
+
+import { create } from "zustand";
+
+type GraphNode = {
+  id: string;
+  value: string;
+  selected: boolean;
+  x: number;
+  y: number;
+  onFrontier: boolean;
+  onClick: ((event: React.MouseEvent<HTMLDivElement>, id: string) => void);
+}
+
+type GraphEdge = {
+  id: string;
+  sourceID: string;
+  targetID: string;
+  weight: number;
+  directed: boolean;
+  activeAnimation: boolean;
+}
+
+type GraphState = {
+    nodes: GraphNode[];
+    edges: GraphEdge[];
+    addNode: (id: string, 
+              value: string, 
+              x: number, 
+              y: number, 
+              onClick: ((event: React.MouseEvent<HTMLDivElement>, id: string) => void)
+            ) => void;
+    removeNode: (id: string) => void;
+    switchNodeSelection: (ids: string[]) => void;
+    addEdge: (id: string,
+              sourceID: string, 
+              targetID: string,
+              weight: number,
+              directed: boolean,
+              activeAnimation: boolean) => void;
+    removeEdge: (id: string) => void;
+    alterEdge: (id: string,
+                updatedProps: object) => void
+}
+
+const useGraphStore = create<GraphState>((set) => ({
+
+    nodes: [],
+    edges: [],
+
+    addNode: (id, value, x, y, onClick) =>
+      set((state) => ({
+        nodes: [...state.nodes, { 
+          id, 
+          value, 
+          x, y, 
+          selected: false, 
+          onFrontier: false, 
+          onClick}],
+      })),
+  
+    removeNode: (id) =>
+      set((state) => ({
+        nodes: state.nodes.filter((node) => node.id !== id),
+        edges: state.edges.filter((edge) => edge.sourceID !== id && edge.targetID !== id),
+      })),
+
+      switchNodeSelection: (ids: string[]) =>
+        set((state) => ({
+            nodes: state.nodes.map((node) =>
+                ids.some((id) => node.id === id)
+                    ? { ...node, selected: true } // Toggle the selection state
+                    : { ...node, selected: false}
+            ),
+        })),
+  
+    addEdge: (id, sourceID, targetID, getNodePosition) =>
+      set((state) => ({
+        edges: [...state.edges, { 
+          id, 
+          sourceID, 
+          targetID, 
+          weight: 1, 
+          directed: false, 
+          activeAnimation: false}],
+      })),
+  
+    removeEdge: (id) =>
+      set((state) => ({
+        edges: state.edges.filter((edge) => edge.id !== id),
+      })),
+
+    alterEdge: (id, updatedProps) =>
+      set((state) => ({
+          edges: state.edges.map((edge) =>
+              edge.id === id
+                  ? { ...edge, ...updatedProps } // Apply the updates to the matched edge
+                  : edge
+          ),
+      })),
+}));
+
+export default useGraphStore;
