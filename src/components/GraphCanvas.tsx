@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "../styles/GraphCanvas.css";
 import GraphNode from "./GraphNode";
 import GraphEdge from "./GraphEdge";
@@ -20,6 +20,12 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
     const [isDeletingNode, setIsDeletingNode] = useState<boolean>(false);
     const [isEditModeOn, setIsEditModeOn] = useState<boolean>(false);
     const [nodeCounter, setNodeCounter] = useState<number>(0);
+    const divRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        divRef.current ?
+        divRef.current.focus() : null        
+    }, []);
 
     const toggleEdgeCreation = (e: React.MouseEvent<HTMLButtonElement>) => {
         e.stopPropagation();
@@ -79,6 +85,12 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
             return null;
         }
         addEdge(id, sourceID, targetID, 1, directed, false)}
+
+    const handleHotkey = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.key === "e") { setIsEditModeOn((prev) => !prev) }
+        else if (e.key === "d" && isEditModeOn) { setIsDeletingNode((prev) => !prev) }
+        else if (e.key === "l" && isEditModeOn) { setIsCreatingEdge((prev) => !prev) }
+    }
 
     const getBfsPath = (startID: string) => {
         return bfs(startID, buildAdjacencyList(nodes, edges))
@@ -155,31 +167,41 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
 
     return (
         <>
-            <button onClick={toggleEditMode} className={isEditModeOn ? "button pressed" : "button not-pressed"}>{isEditModeOn ? "Edit Mode ON" : "Edit Mode OFF"}</button>
-            {isEditModeOn ? (
-                <>
-                    <button onClick={toggleEdgeCreation} className={isCreatingEdge ? "button pressed" : "button not-pressed"}>{isCreatingEdge ? "Edges ON" : "Edges OFF"}</button>
-                    <button onClick={toggleNodeDeletion} className={isDeletingNode ? "button pressed" : "button not-pressed"}>{isDeletingNode ? "Delete Nodes ON" : "Delete Nodes OFF"}</button>
-                    <button onClick={() => deleteAll('nodes')}>Clear</button>
-                    <button onClick={() => deleteAll('edges')}>Clear Edges</button>
-                </>
-            ) : (
-                <>
-                    <button onClick={() => startSearchAnimation(getBfsPath(selectedNodes[selectedNodes.length-1]))}>
-                        Get BFS path
-                    </button>
-                    <button onClick={() => startSearchAnimation(getDfsPath(selectedNodes[selectedNodes.length-1]))}>
-                        Get DFS path
-                    </button>
-                    <button onClick={() => startSearchAnimation(getDijPath(selectedNodes[0],selectedNodes[selectedNodes.length-1]))}>
-                        Get Dijkstra path
-                    </button>
-                </>
-            )}
-            <label>
-                {`Currently selected nodes: ${selectedNodes.length === 1 ? selectedNodes[0] : selectedNodes.join(" ")}`}
-            </label>
-            <div id="main" className="canvas" onClick={handleCanvasClick}>
+            <div id="main" className="canvas" ref={divRef} tabIndex={0} onClick={handleCanvasClick} onKeyDown={handleHotkey}>
+                <div className="left-sidebar">
+                    <button onClick={toggleEditMode} className={isEditModeOn ? "button pressed" : "button not-pressed"}>{isEditModeOn ? "Edit Mode ON" : "Edit Mode OFF"}</button>
+                    <br></br>
+                    {isEditModeOn ? (
+                        <>
+                            <button onClick={toggleEdgeCreation} className={isCreatingEdge ? "button pressed" : "button not-pressed"}>{isCreatingEdge ? "Edges ON" : "Edges OFF"}</button>
+                            <br></br>
+                            <button onClick={toggleNodeDeletion} className={isDeletingNode ? "button pressed" : "button not-pressed"}>{isDeletingNode ? "Delete Nodes ON" : "Delete Nodes OFF"}</button>
+                            <br></br>
+                            <button onClick={() => deleteAll('nodes')}>Clear</button>
+                            <br></br>
+                            <button onClick={() => deleteAll('edges')}>Clear Edges</button>
+                            <br></br>
+                        </>
+                    ) : (
+                        <>
+                            <button onClick={() => startSearchAnimation(getBfsPath(selectedNodes[selectedNodes.length-1]))}>
+                                Get BFS path
+                            </button>
+                            <br></br>
+                            <button onClick={() => startSearchAnimation(getDfsPath(selectedNodes[selectedNodes.length-1]))}>
+                                Get DFS path
+                            </button>
+                            <br></br>
+                            <button onClick={() => startSearchAnimation(getDijPath(selectedNodes[0],selectedNodes[selectedNodes.length-1]))}>
+                                Get Dijkstra path
+                            </button>
+                            <br></br>
+                        </>
+                    )}
+                    <label>
+                        {`Currently selected nodes: ${selectedNodes.length === 1 ? selectedNodes[0] : selectedNodes.join(" ")}`}
+                    </label>
+                </div>
                 <svg className="edge-layer" style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none" }}>
                     {edges.map((edge) => (
                         <GraphEdge key={edge.id} {...edge} />
@@ -188,12 +210,12 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
                 {nodes.map((node) => (
                     <GraphNode key={node.id} {...node} onClick={() => handleNodeClick(node.id)}/>
                 ))}
-            </div>
-            <div className="right-sidebar">
+                <div className="right-sidebar">
                     <AdjacencyListInput />
                     {edges.map((edge) => (
-                        <AdjacencyListElement key={edge.id + "ale"} {...edge} />
+                        <AdjacencyListElement key={edge.id + "ale"} edge={{...(edge as GraphEdgeProps)}} editMode={isEditModeOn}/>
                     ))}
+                </div>
             </div>
         </>
     );

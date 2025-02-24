@@ -16,3 +16,8 @@ export type GraphEdgeProps = {
     directed: boolean;
     activeAnimation: boolean
 }
+
+export type AdjacencyListElementProps = {
+    edge: GraphEdgeProps;
+    editMode: boolean;
+}

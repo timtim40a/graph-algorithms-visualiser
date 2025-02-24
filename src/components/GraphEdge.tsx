@@ -1,5 +1,3 @@
-import { ReactNode } from "react";
-import GraphCanvas from "./GraphCanvas";
 import { GraphEdgeProps } from "@/app/types";
 import { keyframes, motion } from "framer-motion"
 import "../styles/GraphEdge.css";
