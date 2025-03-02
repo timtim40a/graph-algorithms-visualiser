@@ -5,8 +5,9 @@ import GraphEdge from "./GraphEdge";
 import { GraphEdgeProps } from "@/app/types";
 import AdjacencyListInput from "./AdjacencyListInput";
 import AdjacencyListElement from "./AdjacencyListElement";
-import { buildAdjacencyList, bfs, dfs, dijkstra } from "@/utilities/GraphAlgorithms";
+import { buildAdjacencyList, bfs, dfs, dijkstra, aStarWithEuclidean } from "@/utilities/GraphAlgorithms";
 import useGraphStore from "@/store/useGraphStore";
+import { source } from "framer-motion/client";
 
 type GraphCanvasProps = {
     canvasHeight?: number;
@@ -14,12 +15,22 @@ type GraphCanvasProps = {
 };
 
 const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWidth = 200 }) => {
-    const { nodes, edges, addNode, removeNode, addEdge, removeEdge, alterEdge, switchNodeSelection } = useGraphStore();
+    const { nodes, 
+            edges, 
+            addNode, 
+            removeNode,
+            alterNode, 
+            addEdge, 
+            removeEdge, 
+            alterEdge, 
+            sortEdges, 
+            switchNodeSelection } = useGraphStore();
     const [selectedNodes, setSelectedNodes] = useState<string[]>(["none"]);
     const [isCreatingEdge, setIsCreatingEdge] = useState<boolean>(false);
     const [isDeletingNode, setIsDeletingNode] = useState<boolean>(false);
     const [isEditModeOn, setIsEditModeOn] = useState<boolean>(false);
     const [nodeCounter, setNodeCounter] = useState<number>(0);
+    const [adjList, setAdjList] = useState<Map<string, {id: string, weight: number}[]>>(buildAdjacencyList(nodes,edges));
     const divRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
@@ -39,6 +50,8 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
 
     const toggleEditMode = (e: React.MouseEvent<HTMLButtonElement>) => {
         e.stopPropagation();
+        setAdjList(buildAdjacencyList(nodes, edges))
+        sortEdges("asc");
         setIsEditModeOn((prev) => !prev);
     };
 
@@ -75,7 +88,8 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
     };
 
     const createNewEdge = (sourceID: string, targetID: string, directed: boolean) => {
-        const id = "e" + sourceID + targetID;
+        const id = Number(sourceID.slice(1)) < Number(targetID.slice(1)) ? "e" + sourceID + targetID : "e" + targetID + sourceID
+        const directedID = "e" + sourceID + targetID;
         if (sourceID == "none" || targetID == "none") {
             console.warn(`Edge cannot be rendered: Missing node positions for ${sourceID} or ${targetID}`);
             return null;
@@ -84,7 +98,8 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
             console.warn(`Edge cannot be rendered: Edge between ${sourceID} and ${targetID} already exists`);
             return null;
         }
-        addEdge(id, sourceID, targetID, 1, directed, false)}
+        addEdge(id, sourceID, targetID, 1, directed, false)
+    }
 
     const handleHotkey = (e: React.KeyboardEvent<HTMLDivElement>) => {
         if (e.key === "e") { setIsEditModeOn((prev) => !prev) }
@@ -93,11 +108,11 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
     }
 
     const getBfsPath = (startID: string) => {
-        return bfs(startID, buildAdjacencyList(nodes, edges))
+        return bfs(startID, adjList)
     }
     
     const getDfsPath = (startID: string) => {
-        return dfs(startID, buildAdjacencyList(nodes, edges))
+        return dfs(startID, adjList)
     }
     
     const getDijPath = (sourceID: string, targetID: string) => {
@@ -105,7 +120,15 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
             console.warn("only one node was selected: TWO required");
             return null;
         }
-        return dijkstra(sourceID, targetID, buildAdjacencyList(nodes, edges))
+        return dijkstra(sourceID, targetID, adjList)
+    }
+
+    const getAStarPath = (sourceID: string, targetID: string) => {
+        if (sourceID === targetID) {
+            console.warn("only one node was selected: TWO required");
+            return null;
+        }
+        return aStarWithEuclidean(sourceID, targetID, nodes, adjList)
     }
 
     const startSearchAnimation = async (searchOrder: { nodes: string[]; edges: [string, string][] } | null) => {
@@ -130,7 +153,8 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
         edges.forEach((edge) => alterEdge(edge.id, {activeAnimation: false}))
     }
 
-    const deleteAll = (kind: string = "nodes") => {
+    const deleteAll = (e: React.MouseEvent<HTMLButtonElement>, kind: string = "nodes") => {
+        e.stopPropagation()
         if (kind === "nodes") {
             edges.forEach((edge) => removeEdge(edge.id))
             nodes.forEach((node) => removeNode(node.id))
@@ -177,9 +201,9 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
                             <br></br>
                             <button onClick={toggleNodeDeletion} className={isDeletingNode ? "button pressed" : "button not-pressed"}>{isDeletingNode ? "Delete Nodes ON" : "Delete Nodes OFF"}</button>
                             <br></br>
-                            <button onClick={() => deleteAll('nodes')}>Clear</button>
+                            <button onClick={(e) => deleteAll(e, 'nodes')}>Clear</button>
                             <br></br>
-                            <button onClick={() => deleteAll('edges')}>Clear Edges</button>
+                            <button onClick={(e) => deleteAll(e, 'edges')}>Clear Edges</button>
                             <br></br>
                         </>
                     ) : (
@@ -194,6 +218,10 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
                             <br></br>
                             <button onClick={() => startSearchAnimation(getDijPath(selectedNodes[0],selectedNodes[selectedNodes.length-1]))}>
                                 Get Dijkstra path
+                            </button>
+                            <br></br>
+                            <button onClick={() => startSearchAnimation(getAStarPath(selectedNodes[0],selectedNodes[selectedNodes.length-1]))}>
+                                Get A* path
                             </button>
                             <br></br>
                         </>
@@ -212,9 +240,11 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
                 ))}
                 <div className="right-sidebar">
                     <AdjacencyListInput />
+                    <div id="adj-list">
                     {edges.map((edge) => (
                         <AdjacencyListElement key={edge.id + "ale"} edge={{...(edge as GraphEdgeProps)}} editMode={isEditModeOn}/>
                     ))}
+                    </div>
                 </div>
             </div>
         </>

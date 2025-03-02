@@ -7,9 +7,8 @@ const AdjacencyListInput = () => {
     return (
         <div onClick={(event) => {
             event.stopPropagation()}}>
-            <input className="adjacency-list-input" placeholder="Source node..."></input>
+            <input className="adjacency-list-input" placeholder="Search by node..."></input>
             <br></br>
-            <input className="adjacency-list-input" placeholder="Target node..."></input>
         </div>
     )
 

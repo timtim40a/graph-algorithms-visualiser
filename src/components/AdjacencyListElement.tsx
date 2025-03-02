@@ -5,12 +5,17 @@ import React, { useState } from "react"
 
 const AdjacencyListElement:React.FC<AdjacencyListElementProps> = ({edge, editMode = false}) => {
 
-    const {alterEdge} = useGraphStore();
+    const {removeEdge, alterEdge} = useGraphStore();
     const [weight, setWeight] = useState<number>(edge.weight)
 
-    const handleAdjButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const handleWeightButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
         e.stopPropagation()
         alterEdge(edge.id, {weight:weight})
+    }
+
+    const handleDeleteButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.stopPropagation()
+        removeEdge(edge.id)
     }
 
     const handleAdjInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -23,25 +28,34 @@ const AdjacencyListElement:React.FC<AdjacencyListElementProps> = ({edge, editMod
 
     return (
         <>
-            <label key={"adj"+edge.sourceID+edge.targetID+console.timeStamp}>
-                {edge.sourceID + " " + edge.targetID}
-            </label>
-            {editMode ? (<>
-                <input  key={"adi"+edge.sourceID+edge.targetID+console.timeStamp} 
-                        id={"adi"+edge.sourceID+edge.targetID} 
-                        className="adinput"
-                        type="number"
-                        onChange={(e) => handleAdjInputChange(e)}
-                        onKeyDown={(e) => handleAdjInputSubmit(e)}
-                        onClick={(e) => e.stopPropagation()}>
-                </input>
-                <button key={"adb"+edge.sourceID+edge.targetID+console.timeStamp} 
-                        id={"adb"+edge.sourceID+edge.targetID}
-                        onClick={(e) => handleAdjButtonClick(e)}>
-                            Change W
-                </button>
-            </>) : null}
-            <br></br>
+            <div className="adj-element">
+                <label key={"adj"+edge.id.slice(1)+console.timeStamp} className={"adj-element-label"}>
+                    {edge.id.slice(1)}
+                </label>
+                {editMode ? (<>
+                    <input  key={"adi"+edge.id.slice(1)+console.timeStamp} 
+                            id={"adi"+edge.id.slice(1)} 
+                            className="adj-element-input"
+                            placeholder={String(edge.weight)}
+                            type="number"
+                            onChange={(e) => handleAdjInputChange(e)}
+                            onKeyDown={(e) => handleAdjInputSubmit(e)}
+                            onClick={(e) => e.stopPropagation()}>
+                    </input>
+                    <button key={"adbw"+edge.id.slice(1)+console.timeStamp} 
+                            id={"adbw"+edge.id.slice(1)}
+                            className="adj-element-button weight"
+                            onClick={(e) => handleWeightButtonClick(e)}>
+                                Change W
+                    </button>
+                    <button key={"adbd"+edge.id.slice(1)+console.timeStamp} 
+                            id={"adbd"+edge.id.slice(1)}
+                            className="adj-element-button delete"
+                            onClick={(e) => handleDeleteButtonClick(e)}>
+                                <img src="/delete.png" alt="Delete" className="icon"/>
+                    </button>
+                </>) : null}
+            </div>
         </>
     )
 

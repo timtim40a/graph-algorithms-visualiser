@@ -1,5 +1,52 @@
-.adinput {
+.adj-element-button {
+    display: grid;
+    grid-column: 3;
+    grid-row: 0;
+    margin-left: 5px;
+    height: 30px;
+    width: 90px;
+    border: 2px gray;
+    box-shadow: 1px 1px 2px gray;
+    background-color: white;
+    border-radius: 5px;
+}
+
+.adj-element-input {
+    display: grid;
+    grid-column: 2;
+    grid-row: 0;
     height: 10px;
     width: 50px;
-    margin-left: 10px;
+    margin: 5px;
+}
+
+.adj-element-label {
+    display: grid;
+    grid-column: 1;
+    grid-row: 0;
+    width: 60px;
+    padding: 5px;
+    padding-left: 7px;
+    margin: 5px;
+    height: 18px;
+    border-radius: 5px;
+    background-color: lightgray;
+    box-shadow: 1px 1px 3px gray;
+}
+
+.adj-element {
+    display: grid;
+}
+
+.delete {
+    grid-column: 4;
+    grid-row: 0;
+    width: 30px;
+    height: 30px;
+}
+
+.icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
 }

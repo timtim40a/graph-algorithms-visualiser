@@ -18,6 +18,9 @@
 .right-sidebar {
     position: absolute;
     right: 0px;
+    background-color: white;
+    border: 2px gray;
+    border-radius: 10px;
 }
 
 .left-sidebar {
@@ -39,5 +42,9 @@ label {
 }
 
 
-
+#adj-list {
+    border-radius: 10px;
+    overflow: auto;
+    height:400px
+}
 

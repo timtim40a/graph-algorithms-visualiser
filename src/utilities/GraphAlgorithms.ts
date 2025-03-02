@@ -135,3 +135,80 @@ export const dijkstra = (
   };
 };
 
+const euclideanDistance = (
+  nodeA: GraphNodeProps,
+  nodeB: GraphNodeProps
+): number => {
+  const dx = nodeA.x - nodeB.x;
+  const dy = nodeA.y - nodeB.y;
+  return Math.sqrt(dx * dx + dy * dy);
+};
+
+export const aStarWithEuclidean = (
+  startID: string,
+  targetID: string,
+  nodes: GraphNodeProps[],
+  adjacencyList: Map<string, { id: string; weight: number }[]>
+): { distance: number; nodes: string[]; edges: [string, string][] } => {
+  const distances: Map<string, number> = new Map();
+  const previous: Map<string, string | null> = new Map();
+  const priorityQueue: { id: string; fScore: number }[] = [];
+
+  const nodeMap = new Map(nodes.map((node) => [node.id, node]));
+
+  adjacencyList.forEach((_, node) => {
+    distances.set(node, Infinity);
+    previous.set(node, null);
+  });
+
+  distances.set(startID, 0);
+  priorityQueue.push({
+    id: startID,
+    fScore: euclideanDistance(nodeMap.get(startID)!, nodeMap.get(targetID)!),
+  });
+
+  while (priorityQueue.length > 0) {
+    priorityQueue.sort((a, b) => a.fScore - b.fScore);
+    const { id: currentNode } = priorityQueue.shift()!;
+
+    if (currentNode === targetID) break;
+
+    for (const neighbor of adjacencyList.get(currentNode) || []) {
+      const tentativeGScore = distances.get(currentNode)! + neighbor.weight;
+
+      if (tentativeGScore < distances.get(neighbor.id)!) {
+        distances.set(neighbor.id, tentativeGScore);
+        previous.set(neighbor.id, currentNode);
+        priorityQueue.push({
+          id: neighbor.id,
+          fScore:
+            tentativeGScore +
+            euclideanDistance(
+              nodeMap.get(neighbor.id)!,
+              nodeMap.get(targetID)!
+            ),
+        });
+      }
+    }
+  }
+
+  // Reconstruct path as nodes and edges
+  const pathNodes: string[] = [];
+  const pathEdges: [string, string][] = [];
+  let step: string = targetID;
+
+  while (previous.get(step)) {
+    const from = previous.get(step)!;
+    pathNodes.unshift(step);
+    pathEdges.unshift([from, step]);
+    step = from;
+  }
+
+  if (step) pathNodes.unshift(step); // Add start node
+
+  return {
+    distance: distances.get(targetID)!,
+    nodes: pathNodes,
+    edges: pathEdges,
+  };
+};
