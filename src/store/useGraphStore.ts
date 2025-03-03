@@ -25,7 +25,7 @@ type GraphEdge = {
 type GraphState = {
     nodes: GraphNode[];
     edges: GraphEdge[];
-    
+    isGraphDirected: boolean;
     addNode: (id: string, 
               value: string, 
               x: number, 
@@ -46,13 +46,14 @@ type GraphState = {
     alterEdge: (id: string,
                 updatedProps: object) => void;
     sortEdges: (order: string) => void;
-
+    setIsGraphDirected: () => void;
 }
 
 const useGraphStore = create<GraphState>((set) => ({
 
     nodes: [],
     edges: [],
+    isGraphDirected: true,
 
     addNode: (id, value, x, y, onClick) =>
       set((state) => ({
@@ -129,6 +130,8 @@ const useGraphStore = create<GraphState>((set) => ({
           }),
         })),
     
+      setIsGraphDirected: () =>
+        set((state) => ({isGraphDirected: !state.isGraphDirected})),
 }));
 
 export default useGraphStore;

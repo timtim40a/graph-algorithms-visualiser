@@ -2,12 +2,13 @@ import React, { useState, useEffect, useRef } from "react";
 import "../styles/GraphCanvas.css";
 import GraphNode from "./GraphNode";
 import GraphEdge from "./GraphEdge";
-import { GraphEdgeProps } from "@/app/types";
+import { GraphEdgeProps, GraphNodeProps } from "@/app/types";
 import AdjacencyListInput from "./AdjacencyListInput";
 import AdjacencyListElement from "./AdjacencyListElement";
-import { buildAdjacencyList, bfs, dfs, dijkstra, aStarWithEuclidean } from "@/utilities/GraphAlgorithms";
+import { bfs, dfs, dijkstra, aStarWithEuclidean } from "@/utilities/GraphAlgorithms";
 import useGraphStore from "@/store/useGraphStore";
 import { source } from "framer-motion/client";
+import InformationWindow from "./InformationWindow";
 
 type GraphCanvasProps = {
     canvasHeight?: number;
@@ -15,8 +16,32 @@ type GraphCanvasProps = {
 };
 
 const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWidth = 200 }) => {
+    
+    const buildAdjacencyList = (
+        nodes: GraphNodeProps[],
+        edges: GraphEdgeProps[]
+      ): Map<string, {id: string, weight: number}[]> => {
+        const adjacencyList = new Map<string, {id: string, weight: number}[]>();
+        nodes.forEach((node) => adjacencyList.set(node.id, []));
+      
+        edges.forEach((edge) => {
+          const neighbours = adjacencyList.get(edge.sourceID) || [];
+          neighbours.push({id:edge.targetID, weight:edge.weight});
+          adjacencyList.set(edge.sourceID, neighbours);
+      
+          if (!isGraphDirected) {
+            const reverseNeighbours = adjacencyList.get(edge.targetID) || [];
+            reverseNeighbours.push({id:edge.sourceID, weight:edge.weight});
+            adjacencyList.set(edge.targetID, reverseNeighbours);
+          }
+        });
+      
+        return adjacencyList;
+      };
+    
     const { nodes, 
             edges, 
+            isGraphDirected,
             addNode, 
             removeNode,
             alterNode, 
@@ -24,7 +49,8 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
             removeEdge, 
             alterEdge, 
             sortEdges, 
-            switchNodeSelection } = useGraphStore();
+            switchNodeSelection,
+            setIsGraphDirected } = useGraphStore();
     const [selectedNodes, setSelectedNodes] = useState<string[]>(["none"]);
     const [isCreatingEdge, setIsCreatingEdge] = useState<boolean>(false);
     const [isDeletingNode, setIsDeletingNode] = useState<boolean>(false);
@@ -54,6 +80,11 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
         sortEdges("asc");
         setIsEditModeOn((prev) => !prev);
     };
+
+    const toggleDirectedGraph = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.stopPropagation();
+        setIsGraphDirected();
+    }
 
     const handleNodeClick = (id: string) => {
         if (isDeletingNode) {
@@ -89,7 +120,6 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
 
     const createNewEdge = (sourceID: string, targetID: string, directed: boolean) => {
         const id = Number(sourceID.slice(1)) < Number(targetID.slice(1)) ? "e" + sourceID + targetID : "e" + targetID + sourceID
-        const directedID = "e" + sourceID + targetID;
         if (sourceID == "none" || targetID == "none") {
             console.warn(`Edge cannot be rendered: Missing node positions for ${sourceID} or ${targetID}`);
             return null;
@@ -118,6 +148,10 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
     const getDijPath = (sourceID: string, targetID: string) => {
         if (sourceID === targetID) {
             console.warn("only one node was selected: TWO required");
+            return null;
+        }
+        if (edges.some((edge) => edge.weight < 0)) {
+            console.warn("The graph contains negative weights. Dijkstra algorithm may return unexpected paths.");
             return null;
         }
         return dijkstra(sourceID, targetID, adjList)
@@ -166,6 +200,8 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
         }
     }
 
+    
+
     useEffect(() => {
         if (!isEditModeOn) {
             setIsDeletingNode(false);
@@ -204,6 +240,8 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
                             <button onClick={(e) => deleteAll(e, 'nodes')}>Clear</button>
                             <br></br>
                             <button onClick={(e) => deleteAll(e, 'edges')}>Clear Edges</button>
+                            <br></br>
+                            <button onClick={toggleDirectedGraph} className={isGraphDirected ? "button pressed" : "button not-pressed"}> {isGraphDirected ? "Directed" : "Undirected"} </button>
                             <br></br>
                         </>
                     ) : (

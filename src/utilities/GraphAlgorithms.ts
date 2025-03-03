@@ -1,29 +1,6 @@
 import { GraphEdgeProps, GraphNodeProps } from '@/app/types'; // Update the path accordingly.
 
-// Utility to build an adjacency list
-export const buildAdjacencyList = (
-  nodes: GraphNodeProps[],
-  edges: GraphEdgeProps[]
-): Map<string, {id: string, weight: number}[]> => {
-  const adjacencyList = new Map<string, {id: string, weight: number}[]>();
-  nodes.forEach((node) => adjacencyList.set(node.id, []));
 
-  edges.forEach((edge) => {
-    const neighbours = adjacencyList.get(edge.sourceID) || [];
-    neighbours.push({id:edge.targetID, weight:edge.weight});
-    adjacencyList.set(edge.sourceID, neighbours);
-
-    if (!edge.directed) {
-      const reverseNeighbours = adjacencyList.get(edge.targetID) || [];
-      reverseNeighbours.push({id:edge.sourceID, weight:edge.weight});
-      adjacencyList.set(edge.targetID, reverseNeighbours);
-    }
-  });
-
-  return adjacencyList;
-};
-
-// BFS Implementation
 export const bfs = (
   startID: string,
   adjacencyList: Map<string, { id: string; weight: number }[]>
