@@ -21,3 +21,13 @@ export type AdjacencyListElementProps = {
     edge: GraphEdgeProps;
     editMode: boolean;
 }
+
+export type MessageProps = {
+    info: string;
+    inftype: string;
+}
+
+export type SearchOrder = {
+    nodes: string[];
+    edges: [string, string][];
+  };

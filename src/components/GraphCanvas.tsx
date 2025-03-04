@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import "../styles/GraphCanvas.css";
 import GraphNode from "./GraphNode";
 import GraphEdge from "./GraphEdge";
-import { GraphEdgeProps, GraphNodeProps } from "@/app/types";
+import { GraphEdgeProps, GraphNodeProps, SearchOrder } from "@/app/types";
 import AdjacencyListInput from "./AdjacencyListInput";
 import AdjacencyListElement from "./AdjacencyListElement";
 import { bfs, dfs, dijkstra, aStarWithEuclidean } from "@/utilities/GraphAlgorithms";
@@ -42,6 +42,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
     const { nodes, 
             edges, 
             isGraphDirected,
+            isAnimationOn,
             addNode, 
             removeNode,
             alterNode, 
@@ -50,14 +51,21 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
             alterEdge, 
             sortEdges, 
             switchNodeSelection,
-            setIsGraphDirected } = useGraphStore();
+            setIsGraphDirected,
+            setIsAnimationOn } = useGraphStore();
     const [selectedNodes, setSelectedNodes] = useState<string[]>(["none"]);
     const [isCreatingEdge, setIsCreatingEdge] = useState<boolean>(false);
     const [isDeletingNode, setIsDeletingNode] = useState<boolean>(false);
     const [isEditModeOn, setIsEditModeOn] = useState<boolean>(false);
     const [nodeCounter, setNodeCounter] = useState<number>(0);
+    const [message, setMessage] = useState<[string,string]>(["Welcome!","log"]);
     const [adjList, setAdjList] = useState<Map<string, {id: string, weight: number}[]>>(buildAdjacencyList(nodes,edges));
     const divRef = useRef<HTMLDivElement | null>(null);
+
+    const [isAnimationPaused, setIsAnimationPaused] = useState(false);
+    const [animationIndex, setAnimationIndex] = useState(0);
+    const [animationFrames, setAnimationFrames] = useState<[string, string][]>([]);
+    const [searchOrder, setSearchOrder] = useState<SearchOrder>()
 
     useEffect(() => {
         divRef.current ?
@@ -122,10 +130,12 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
         const id = Number(sourceID.slice(1)) < Number(targetID.slice(1)) ? "e" + sourceID + targetID : "e" + targetID + sourceID
         if (sourceID == "none" || targetID == "none") {
             console.warn(`Edge cannot be rendered: Missing node positions for ${sourceID} or ${targetID}`);
+            setMessage([`Edge cannot be rendered: Missing node positions for ${sourceID} or ${targetID}`,"alert"])
             return null;
         }
         if (edges.some((edge) => edge.id == id || edge.id == "e" + targetID + sourceID)) {
             console.warn(`Edge cannot be rendered: Edge between ${sourceID} and ${targetID} already exists`);
+            setMessage([`Edge cannot be rendered: Edge between ${sourceID} and ${targetID} already exists`,"alert"]);
             return null;
         }
         addEdge(id, sourceID, targetID, 1, directed, false)
@@ -147,11 +157,13 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
     
     const getDijPath = (sourceID: string, targetID: string) => {
         if (sourceID === targetID) {
-            console.warn("only one node was selected: TWO required");
+            console.warn("Dijkstra algorithm requires two nodes selected.");
+            setMessage(["Dijkstra algorithm requires two nodes selected.", "error"])
             return null;
         }
         if (edges.some((edge) => edge.weight < 0)) {
             console.warn("The graph contains negative weights. Dijkstra algorithm may return unexpected paths.");
+            setMessage(["The graph contains negative weights. Dijkstra algorithm may return unexpected paths.", "alert"])
             return null;
         }
         return dijkstra(sourceID, targetID, adjList)
@@ -159,7 +171,12 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
 
     const getAStarPath = (sourceID: string, targetID: string) => {
         if (sourceID === targetID) {
-            console.warn("only one node was selected: TWO required");
+            console.warn("A* algorithm requires two nodes selected.");
+            setMessage(["A* algorithm requires two nodes selected.", "error"]);
+            return null;
+        } if (edges.some((edge) => edge.weight < 0)) {
+            console.warn("The graph contains negative weights. A* algorithm may return unexpected paths.");
+            setMessage(["The graph contains negative weights. A* algorithm may return unexpected paths.", "alert"])
             return null;
         }
         return aStarWithEuclidean(sourceID, targetID, nodes, adjList)
@@ -168,10 +185,11 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
     const startSearchAnimation = async (searchOrder: { nodes: string[]; edges: [string, string][] } | null) => {
         if (!searchOrder) return;
         stopAnimation();
+        setIsAnimationOn(true);
         const searchOrderNodes = searchOrder.nodes;
         const searchOrderEdges = searchOrder.edges;
         console.log(searchOrderEdges)
-        for (let i = 0; i < searchOrderEdges.length; i++) {
+        for (let i = 0; i < searchOrderEdges.length && isAnimationOn; i++) {
             const edgeID = "e" + searchOrderEdges[i][0] + searchOrderEdges[i][1]
             const edgeReverseID = "e" + searchOrderEdges[i][1] + searchOrderEdges[i][0]
             const edgeToAnimate = edges.find((edge) => edge.id === edgeID || edge.id === edgeReverseID);
@@ -179,12 +197,12 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
             await new Promise(resolve => setTimeout(resolve, 1000))
             console.log(edgeToAnimate)
         }
-        await new Promise(resolve => setTimeout(resolve, 10000))
-        stopAnimation()
     }
 
-    const stopAnimation = () => {
+    const stopAnimation = (e?: React.MouseEvent<HTMLButtonElement>) => {
+        e ? e.stopPropagation() : null;
         edges.forEach((edge) => alterEdge(edge.id, {activeAnimation: false}))
+        setIsAnimationOn(false)
     }
 
     const deleteAll = (e: React.MouseEvent<HTMLButtonElement>, kind: string = "nodes") => {
@@ -211,12 +229,42 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
     }, [isEditModeOn]);
 
     useEffect(() => {
+        if (!isAnimationOn || !searchOrder) return;
+        setAnimationFrames(searchOrder.edges);
+        setAnimationIndex(0);
+      }, [searchOrder, isAnimationOn]);
+
+      useEffect(() => {
+        if (!isAnimationOn || isAnimationPaused || animationIndex >= animationFrames.length) return;
+    
+        const animateFrame = async () => {
+          const [nodeA, nodeB] = animationFrames[animationIndex];
+          const edgeID = "e" + nodeA + nodeB;
+          const edgeReverseID = "e" + nodeB + nodeA;
+          const edgeToAnimate = edges.find((edge) => edge.id === edgeID || edge.id === edgeReverseID);
+    
+          if (edgeToAnimate) {
+            alterEdge(edgeToAnimate.id, { activeAnimation: true });
+          }
+    
+          console.log(edgeToAnimate);
+    
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          setAnimationIndex((prev) => prev + 1);
+        };
+    
+        animateFrame();
+      }, [animationIndex, isAnimationOn, isAnimationPaused]);
+
+    useEffect(() => {
         console.log(`Edge creation mode is now: ${isCreatingEdge ? "ON" : "OFF"}`);
+        setMessage([`Edge creation mode is now: ${isCreatingEdge ? "ON" : "OFF"}`, "log"]);
         isCreatingEdge ? setIsDeletingNode(false) : null;
     }, [isCreatingEdge]); // Runs whenever isCreatingEdge changes
 
     useEffect(() => {
         console.log(`Node deletion mode is now: ${isDeletingNode ? "ON" : "OFF"}`);
+        setMessage([`Node deletion mode is now: ${isCreatingEdge ? "ON" : "OFF"}`, "log"])
         isDeletingNode ? setIsCreatingEdge(false) : null;
         setSelectedNodes(["none"]);
     }, [isDeletingNode]); // Runs whenever isDeletingNode changes
@@ -262,6 +310,12 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
                                 Get A* path
                             </button>
                             <br></br>
+                            {isAnimationOn ? (<>
+                            <button onClick={(e) => stopAnimation(e)}>
+                                Stop Animation
+                            </button>
+                            <br></br>
+                            </>) : null}
                         </>
                     )}
                     <label>
@@ -283,6 +337,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
                         <AdjacencyListElement key={edge.id + "ale"} edge={{...(edge as GraphEdgeProps)}} editMode={isEditModeOn}/>
                     ))}
                     </div>
+                    <InformationWindow key={"inf"} info={message[0]} inftype={message[1]}></InformationWindow>
                 </div>
             </div>
         </>

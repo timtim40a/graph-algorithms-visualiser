@@ -26,6 +26,13 @@ const AdjacencyListElement:React.FC<AdjacencyListElementProps> = ({edge, editMod
         if (e.key === "Enter") alterEdge(edge.id, {weight:weight})
     }
 
+    const handleSwapDirection = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>): void => {
+        e.stopPropagation()
+        const tempID = edge.sourceID
+        alterEdge(edge.id, {sourceID: edge.targetID})
+        alterEdge(edge.id, {targetID: tempID})
+    }
+
     return (
         <>
             <div className="adj-element">
@@ -46,7 +53,13 @@ const AdjacencyListElement:React.FC<AdjacencyListElementProps> = ({edge, editMod
                             id={"adbw"+edge.id.slice(1)}
                             className="adj-element-button weight"
                             onClick={(e) => handleWeightButtonClick(e)}>
-                                Change W
+                                W
+                    </button>
+                    <button key={"adbD"+edge.id.slice(1)+console.timeStamp} 
+                            id={"adbD"+edge.id.slice(1)}
+                            className="adj-element-button direction"
+                            onClick={(e) => handleSwapDirection(e)}>
+                                ↔
                     </button>
                     <button key={"adbd"+edge.id.slice(1)+console.timeStamp} 
                             id={"adbd"+edge.id.slice(1)}

@@ -1,0 +1,5 @@
+.info-window {
+    border: 2px gray;
+    border-radius: 5px;
+    width: inherit;
+}

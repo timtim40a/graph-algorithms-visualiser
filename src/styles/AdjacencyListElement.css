@@ -2,9 +2,9 @@
     display: grid;
     grid-column: 3;
     grid-row: 0;
-    margin-left: 5px;
+    margin-left: 0px;
     height: 30px;
-    width: 90px;
+    width: 30px;
     border: 2px gray;
     box-shadow: 1px 1px 2px gray;
     background-color: white;
@@ -38,8 +38,13 @@
     display: grid;
 }
 
-.delete {
+.direction {
     grid-column: 4;
+    grid-row: 0;
+}
+
+.delete {
+    grid-column: 5;
     grid-row: 0;
     width: 30px;
     height: 30px;
