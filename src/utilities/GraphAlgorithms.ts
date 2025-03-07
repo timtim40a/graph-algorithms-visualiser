@@ -1,10 +1,10 @@
-import { GraphEdgeProps, GraphNodeProps } from '@/app/types'; // Update the path accordingly.
+import { GraphEdgeProps, GraphNodeProps, SearchOrder } from '@/app/types'; // Update the path accordingly.
 
 
 export const bfs = (
   startID: string,
   adjacencyList: Map<string, { id: string; weight: number }[]>
-): { nodes: string[]; edges: [string, string][] } => {
+): SearchOrder => {
   const visited = new Set<string>();
   const queue: string[] = [startID];
   const nodes: string[] = [];
@@ -32,7 +32,7 @@ export const bfs = (
 export const dfs = (
   startID: string,
   adjacencyList: Map<string, { id: string; weight: number }[]>
-): { nodes: string[]; edges: [string, string][] } => {
+): SearchOrder => {
   const visited = new Set<string>();
   const nodes: string[] = [];
   const edges: [string, string][] = [];
@@ -61,7 +61,7 @@ export const dijkstra = (
   startID: string,
   targetID: string,
   adjacencyList: Map<string, { id: string; weight: number }[]>
-): { distance: number; nodes: string[]; edges: [string, string][] } => {
+): SearchOrder => {
   const distances: Map<string, number> = new Map();
   const previous: Map<string, string | null> = new Map();
   const priorityQueue: { id: string; distance: number }[] = [];
@@ -126,7 +126,7 @@ export const aStarWithEuclidean = (
   targetID: string,
   nodes: GraphNodeProps[],
   adjacencyList: Map<string, { id: string; weight: number }[]>
-): { distance: number; nodes: string[]; edges: [string, string][] } => {
+): SearchOrder => {
   const distances: Map<string, number> = new Map();
   const previous: Map<string, string | null> = new Map();
   const priorityQueue: { id: string; fScore: number }[] = [];

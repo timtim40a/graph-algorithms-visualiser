@@ -182,28 +182,45 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
         return aStarWithEuclidean(sourceID, targetID, nodes, adjList)
     }
 
-    const startSearchAnimation = async (searchOrder: { nodes: string[]; edges: [string, string][] } | null) => {
-        if (!searchOrder) return;
-        stopAnimation();
-        setIsAnimationOn(true);
-        const searchOrderNodes = searchOrder.nodes;
-        const searchOrderEdges = searchOrder.edges;
-        console.log(searchOrderEdges)
-        for (let i = 0; i < searchOrderEdges.length && isAnimationOn; i++) {
-            const edgeID = "e" + searchOrderEdges[i][0] + searchOrderEdges[i][1]
-            const edgeReverseID = "e" + searchOrderEdges[i][1] + searchOrderEdges[i][0]
-            const edgeToAnimate = edges.find((edge) => edge.id === edgeID || edge.id === edgeReverseID);
-            edgeToAnimate ? alterEdge(edgeToAnimate.id, {activeAnimation: true}) : null
-            await new Promise(resolve => setTimeout(resolve, 1000))
-            console.log(edgeToAnimate)
+    const startAnimation = (newSearchOrder : SearchOrder | null) => {
+        if (!newSearchOrder) return;
+        setSearchOrder(newSearchOrder)
+        stopAnimation(); // Reset first
+        
+        setTimeout(() => {
+            setAnimationIndex(0);
+            setAnimationFrames(newSearchOrder.edges);
+            setIsAnimationOn(true);
+          }, 10); // Small delay to avoid state update conflicts
+      };
+    
+      const stopAnimation = (e?: React.MouseEvent<HTMLButtonElement>) => {
+        e ? e.stopPropagation : null;
+        setIsAnimationOn(false);
+        setIsAnimationPaused(false);
+        setAnimationIndex(0);
+        setAnimationFrames([]);
+        edges.forEach((edge) => edge.activeAnimation = false)
+      };
+    
+      const pauseAnimation = () => setIsAnimationPaused(true);
+      const resumeAnimation = () => setIsAnimationPaused(false);
+      
+      const nextFrame = () => {
+        if (animationIndex < animationFrames.length - 1) {
+            setAnimationIndex((prev) => prev + 1);
         }
-    }
+        const [nodeA, nodeB] = animationFrames[animationIndex];
+        const edgeID = "e" + nodeA + nodeB;
+        const edgeReverseID = "e" + nodeB + nodeA;
+        const edgeToAnimate = edges.find((edge) => edge.id === edgeID || edge.id === edgeReverseID);
 
-    const stopAnimation = (e?: React.MouseEvent<HTMLButtonElement>) => {
-        e ? e.stopPropagation() : null;
-        edges.forEach((edge) => alterEdge(edge.id, {activeAnimation: false}))
-        setIsAnimationOn(false)
-    }
+        if (edgeToAnimate) {
+        alterEdge(edgeToAnimate.id, { activeAnimation: true });
+        }
+
+        console.log(edgeToAnimate);
+      };
 
     const deleteAll = (e: React.MouseEvent<HTMLButtonElement>, kind: string = "nodes") => {
         e.stopPropagation()
@@ -234,7 +251,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
         setAnimationIndex(0);
       }, [searchOrder, isAnimationOn]);
 
-      useEffect(() => {
+    useEffect(() => {
         if (!isAnimationOn || isAnimationPaused || animationIndex >= animationFrames.length) return;
     
         const animateFrame = async () => {
@@ -254,7 +271,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
         };
     
         animateFrame();
-      }, [animationIndex, isAnimationOn, isAnimationPaused]);
+      }, [animationIndex, isAnimationOn, isAnimationPaused, animationFrames]);
 
     useEffect(() => {
         console.log(`Edge creation mode is now: ${isCreatingEdge ? "ON" : "OFF"}`);
@@ -294,19 +311,19 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
                         </>
                     ) : (
                         <>
-                            <button onClick={() => startSearchAnimation(getBfsPath(selectedNodes[selectedNodes.length-1]))}>
+                            <button onClick={() => startAnimation(getBfsPath(selectedNodes[selectedNodes.length-1]))}>
                                 Get BFS path
                             </button>
                             <br></br>
-                            <button onClick={() => startSearchAnimation(getDfsPath(selectedNodes[selectedNodes.length-1]))}>
+                            <button onClick={() => startAnimation(getDfsPath(selectedNodes[selectedNodes.length-1]))}>
                                 Get DFS path
                             </button>
                             <br></br>
-                            <button onClick={() => startSearchAnimation(getDijPath(selectedNodes[0],selectedNodes[selectedNodes.length-1]))}>
+                            <button onClick={() => startAnimation(getDijPath(selectedNodes[0],selectedNodes[selectedNodes.length-1]))}>
                                 Get Dijkstra path
                             </button>
                             <br></br>
-                            <button onClick={() => startSearchAnimation(getAStarPath(selectedNodes[0],selectedNodes[selectedNodes.length-1]))}>
+                            <button onClick={() => startAnimation(getAStarPath(selectedNodes[0],selectedNodes[selectedNodes.length-1]))}>
                                 Get A* path
                             </button>
                             <br></br>
@@ -314,6 +331,12 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
                             <button onClick={(e) => stopAnimation(e)}>
                                 Stop Animation
                             </button>
+                            <br></br>
+                            <button onClick={pauseAnimation} disabled={isAnimationPaused || animationIndex > animationFrames.length - 1}>Pause</button>
+                            <br></br>
+                            <button onClick={resumeAnimation} disabled={!isAnimationPaused || animationIndex > animationFrames.length - 1}>Resume</button>
+                            <br></br>
+                            <button onClick={nextFrame} disabled={!isAnimationPaused || animationIndex > animationFrames.length - 1}>Next Frame</button>
                             <br></br>
                             </>) : null}
                         </>
@@ -339,6 +362,12 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
                     </div>
                     <InformationWindow key={"inf"} info={message[0]} inftype={message[1]}></InformationWindow>
                 </div>
+                    { isAnimationOn ? 
+                        <div className="bottom-bar">
+                            
+
+                        </div>
+                    : null}
             </div>
         </>
     );

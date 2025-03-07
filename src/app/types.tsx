@@ -30,4 +30,5 @@ export type MessageProps = {
 export type SearchOrder = {
     nodes: string[];
     edges: [string, string][];
+    distance?: number;
   };

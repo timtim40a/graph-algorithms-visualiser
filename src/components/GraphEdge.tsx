@@ -44,6 +44,16 @@ const GraphEdge: React.FC<GraphEdgeProps> = ({id, sourceID, targetID, weight, di
             markerHeight="6"
             orient="auto-start-reverse">
                 <path d="M 0 0 L 10 5 L 0 10 z" />
+                {activeAnimation ? 
+                <animate
+                    attributeName="fill"
+                    from="rgb(0,0,0)"
+                    to="rgb(0,128,0)"
+                    begin="0s"
+                    dur="9s"
+                    fill="freeze"
+                /> 
+                : null}
             </marker>
         </defs>
         <line
@@ -65,16 +75,6 @@ const GraphEdge: React.FC<GraphEdgeProps> = ({id, sourceID, targetID, weight, di
                     dur="9s"
                     fill="freeze"
                 /> 
-                //<motion.line
-                //id={id}
-                //animate={{ stroke: ["rgb(0,0,0)" , "rgb(0,128,0)"] }}
-                //transition={{
-                //    times: [0,1],
-                //    duration: 9,
-                //    type: "keyframes",
-                //    ease: "easeIn"
-                //}}
-                ///>
                 : null}
         </line> 
         <rect
