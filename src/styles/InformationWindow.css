@@ -1,5 +1,9 @@
 .info-window {
-    border: 2px gray;
-    border-radius: 5px;
+    border: solid gray;
+    border-width: 1px 0px;
+    padding: 10px 0px 0px 0px;
+    margin: 0px 0px 0px 0px;
     width: inherit;
+    height: 30vh;
+    overflow: auto;
 }

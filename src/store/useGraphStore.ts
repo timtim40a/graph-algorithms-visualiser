@@ -26,6 +26,8 @@ type GraphState = {
     nodes: GraphNode[];
     edges: GraphEdge[];
     isGraphDirected: boolean;
+    isGraphCyclic: boolean;
+    isGraphNegativeCyclic: boolean;
     isAnimationOn: boolean;
     addNode: (id: string, 
               value: string, 
@@ -48,6 +50,8 @@ type GraphState = {
                 updatedProps: object) => void;
     sortEdges: (order: string) => void;
     setIsGraphDirected: () => void;
+    setIsGraphCyclic: (value: boolean) => void;
+    setIsGraphNegativeCyclic: (value: boolean) => void;
     setIsAnimationOn: (value: boolean) => void;
 }
 
@@ -56,6 +60,8 @@ const useGraphStore = create<GraphState>((set) => ({
     nodes: [],
     edges: [],
     isGraphDirected: true,
+    isGraphCyclic: false,
+    isGraphNegativeCyclic: false,
     isAnimationOn: false,
 
     addNode: (id, value, x, y, onClick) =>
@@ -135,6 +141,12 @@ const useGraphStore = create<GraphState>((set) => ({
     
       setIsGraphDirected: () =>
         set((state) => ({isGraphDirected: !state.isGraphDirected})),
+
+      setIsGraphCyclic: (value: boolean) =>
+        set((state) => ({isGraphCyclic: value})),
+
+      setIsGraphNegativeCyclic: (value: boolean) =>
+        set((state) => ({isGraphNegativeCyclic: value})),
 
       setIsAnimationOn: (value: boolean) =>
         set((state) => ({isAnimationOn: value})),

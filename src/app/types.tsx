@@ -30,5 +30,12 @@ export type MessageProps = {
 export type SearchOrder = {
     nodes: string[];
     edges: [string, string][];
-    distance?: number;
-  };
+    distances?: Map<string, number>;
+}
+
+export type AnimationElementProps = {
+    node: string;
+    visible: boolean;
+    active: boolean;
+    weight?: string;
+}

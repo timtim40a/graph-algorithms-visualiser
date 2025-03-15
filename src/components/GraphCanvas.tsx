@@ -1,14 +1,16 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, ChangeEvent } from "react";
 import "../styles/GraphCanvas.css";
 import GraphNode from "./GraphNode";
 import GraphEdge from "./GraphEdge";
 import { GraphEdgeProps, GraphNodeProps, SearchOrder } from "@/app/types";
 import AdjacencyListInput from "./AdjacencyListInput";
 import AdjacencyListElement from "./AdjacencyListElement";
-import { bfs, dfs, dijkstra, aStarWithEuclidean } from "@/utilities/GraphAlgorithms";
+import { bfs, dfs, dijkstra, aStarWithEuclidean, bellmanFord } from "@/utilities/GraphAlgorithms";
 import useGraphStore from "@/store/useGraphStore";
 import { source } from "framer-motion/client";
 import InformationWindow from "./InformationWindow";
+import AnimationElement from "./AnimationElement";
+import { error } from "console";
 
 type GraphCanvasProps = {
     canvasHeight?: number;
@@ -42,6 +44,8 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
     const { nodes, 
             edges, 
             isGraphDirected,
+            isGraphCyclic,
+            isGraphNegativeCyclic,
             isAnimationOn,
             addNode, 
             removeNode,
@@ -52,6 +56,8 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
             sortEdges, 
             switchNodeSelection,
             setIsGraphDirected,
+            setIsGraphCyclic,
+            setIsGraphNegativeCyclic,
             setIsAnimationOn } = useGraphStore();
     const [selectedNodes, setSelectedNodes] = useState<string[]>(["none"]);
     const [isCreatingEdge, setIsCreatingEdge] = useState<boolean>(false);
@@ -60,6 +66,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
     const [nodeCounter, setNodeCounter] = useState<number>(0);
     const [message, setMessage] = useState<[string,string]>(["Welcome!","log"]);
     const [adjList, setAdjList] = useState<Map<string, {id: string, weight: number}[]>>(buildAdjacencyList(nodes,edges));
+    const [adjInput, setAdjInput] = useState<string>("");
     const divRef = useRef<HTMLDivElement | null>(null);
 
     const [isAnimationPaused, setIsAnimationPaused] = useState(false);
@@ -182,6 +189,22 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
         return aStarWithEuclidean(sourceID, targetID, nodes, adjList)
     }
 
+    const getBellmanFord = (sourceID: string, targetID: string) => {
+        if (sourceID === targetID) {
+            console.warn("Bellman Ford algorithm requires two nodes selected.");
+            setMessage(["Bellman Ford algorithm requires two nodes selected.", "error"]);
+            return null;
+        }
+        try {
+            setIsGraphNegativeCyclic(false)
+            return bellmanFord(sourceID, targetID, nodes, adjList)
+        } catch (error: any) {
+            setMessage([error.message, "error"])
+            setIsGraphNegativeCyclic(true)
+            return null;
+        }
+    }
+
     const startAnimation = (newSearchOrder : SearchOrder | null) => {
         if (!newSearchOrder) return;
         setSearchOrder(newSearchOrder)
@@ -235,7 +258,9 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
         }
     }
 
-    
+    const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+        setAdjInput(event.target.value);
+    }
 
     useEffect(() => {
         if (!isEditModeOn) {
@@ -293,6 +318,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
     return (
         <>
             <div id="main" className="canvas" ref={divRef} tabIndex={0} onClick={handleCanvasClick} onKeyDown={handleHotkey}>
+            {nodes.length === 0 ? <label id="info"> {isEditModeOn ? "Click anywhere to place a node" : "The edit mode is off. Turn on the edit mode by pressing \"E\"" } </label> : null}
                 <div className="left-sidebar">
                     <button onClick={toggleEditMode} className={isEditModeOn ? "button pressed" : "button not-pressed"}>{isEditModeOn ? "Edit Mode ON" : "Edit Mode OFF"}</button>
                     <br></br>
@@ -312,19 +338,23 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
                     ) : (
                         <>
                             <button onClick={() => startAnimation(getBfsPath(selectedNodes[selectedNodes.length-1]))}>
-                                Get BFS path
+                                Run BFS algorithm
                             </button>
                             <br></br>
                             <button onClick={() => startAnimation(getDfsPath(selectedNodes[selectedNodes.length-1]))}>
-                                Get DFS path
+                                Run DFS algorithm
                             </button>
                             <br></br>
                             <button onClick={() => startAnimation(getDijPath(selectedNodes[0],selectedNodes[selectedNodes.length-1]))}>
-                                Get Dijkstra path
+                                Run Dijkstra algorithm
                             </button>
                             <br></br>
                             <button onClick={() => startAnimation(getAStarPath(selectedNodes[0],selectedNodes[selectedNodes.length-1]))}>
-                                Get A* path
+                                Run A* algorithm
+                            </button>
+                            <br></br>
+                            <button onClick={() => startAnimation(getBellmanFord(selectedNodes[0],selectedNodes[selectedNodes.length-1]))}>
+                                Run Bellman-Ford algorithm
                             </button>
                             <br></br>
                             {isAnimationOn ? (<>
@@ -354,9 +384,15 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
                     <GraphNode key={node.id} {...node} onClick={() => handleNodeClick(node.id)}/>
                 ))}
                 <div className="right-sidebar">
-                    <AdjacencyListInput />
+                    <div onClick={(event) => {
+                        event.stopPropagation()}}>
+                        <input className="adjacency-list-input" 
+                               placeholder="Search by node..."
+                               onChange={handleInputChange}></input>
+                        <br></br>
+                    </div>
                     <div id="adj-list">
-                    {edges.map((edge) => (
+                    {edges.filter((edge) => edge.id.includes(adjInput)).map((edge) => (
                         <AdjacencyListElement key={edge.id + "ale"} edge={{...(edge as GraphEdgeProps)}} editMode={isEditModeOn}/>
                     ))}
                     </div>
@@ -364,8 +400,21 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
                 </div>
                     { isAnimationOn ? 
                         <div className="bottom-bar">
-                            
-
+                            <div className="animation-bar">
+                            {searchOrder?.nodes.map((node) => (
+                                <>
+                                <AnimationElement 
+                                    key={"anima"+node}       
+                                    node={node}                   
+                                    visible={animationFrames.slice(0,animationIndex).some(([_, n]) => node === n) || animationIndex === 0}
+                                    active={animationIndex > 0 ? animationFrames[animationIndex-1].includes(node) : false}
+                                    weight={searchOrder.distances ? String(searchOrder.distances.get(node)) : undefined}>
+                                </AnimationElement>
+                                </>
+                            ))}
+                                <p></p>
+                                <p>{searchOrder ? searchOrder.distances : null}</p>
+                            </div>
                         </div>
                     : null}
             </div>

@@ -16,11 +16,11 @@ export const bfs = (
       visited.add(current);
       nodes.push(current);
 
-      const neighbors = adjacencyList.get(current) || [];
-      for (const neighbor of neighbors) {
-        if (!visited.has(neighbor.id)) {
-          edges.push([current, neighbor.id]); // Track traversed edge (current → neighbor)
-          queue.push(neighbor.id);
+      const neighbours = adjacencyList.get(current) || [];
+      for (const neighbour of neighbours) {
+        if (!visited.has(neighbour.id)) {
+          edges.push([current, neighbour.id]); // Track traversed edge (current → neighbour)
+          queue.push(neighbour.id);
         }
       }
     }
@@ -42,11 +42,11 @@ export const dfs = (
       visited.add(node);
       nodes.push(node);
 
-      const neighbors = adjacencyList.get(node) || [];
-      for (const neighbor of neighbors) {
-        if (!visited.has(neighbor.id)) {
-          edges.push([node, neighbor.id]); // Track edges
-          dfsHelper(neighbor.id);
+      const neighbours = adjacencyList.get(node) || [];
+      for (const neighbour of neighbours) {
+        if (!visited.has(neighbour.id)) {
+          edges.push([node, neighbour.id]); // Track edges
+          dfsHelper(neighbour.id);
         }
       }
     }
@@ -80,13 +80,13 @@ export const dijkstra = (
 
     if (currentNode === targetID) break;
 
-    for (const neighbor of adjacencyList.get(currentNode) || []) {
-      const newDist = distances.get(currentNode)! + neighbor.weight;
+    for (const neighbour of adjacencyList.get(currentNode) || []) {
+      const newDist = distances.get(currentNode)! + neighbour.weight;
 
-      if (newDist < distances.get(neighbor.id)!) {
-        distances.set(neighbor.id, newDist);
-        previous.set(neighbor.id, currentNode);
-        priorityQueue.push({ id: neighbor.id, distance: newDist });
+      if (newDist < distances.get(neighbour.id)!) {
+        distances.set(neighbour.id, newDist);
+        previous.set(neighbour.id, currentNode);
+        priorityQueue.push({ id: neighbour.id, distance: newDist });
       }
     }
   }
@@ -106,7 +106,7 @@ export const dijkstra = (
   if (step) nodes.unshift(step); // Add start node
 
   return {
-    distance: distances.get(targetID)!,
+    distances: distances,
     nodes,
     edges,
   };
@@ -150,20 +150,22 @@ export const aStarWithEuclidean = (
 
     if (currentNode === targetID) break;
 
-    for (const neighbor of adjacencyList.get(currentNode) || []) {
-      const tentativeGScore = distances.get(currentNode)! + neighbor.weight;
+    for (const neighbour of adjacencyList.get(currentNode) || []) {
+      const tentativeGScore = distances.get(currentNode)! + neighbour.weight;
 
-      if (tentativeGScore < distances.get(neighbor.id)!) {
-        distances.set(neighbor.id, tentativeGScore);
-        previous.set(neighbor.id, currentNode);
+      if (tentativeGScore < distances.get(neighbour.id)!) {
+        distances.set(neighbour.id, tentativeGScore);
+        previous.set(neighbour.id, currentNode);
+        const euD = euclideanDistance(
+          nodeMap.get(neighbour.id)!,
+          nodeMap.get(targetID)!
+        )
+        console.log(euD)
+        console.log(tentativeGScore)
         priorityQueue.push({
-          id: neighbor.id,
+          id: neighbour.id,
           fScore:
-            tentativeGScore +
-            euclideanDistance(
-              nodeMap.get(neighbor.id)!,
-              nodeMap.get(targetID)!
-            ),
+            tentativeGScore + euD,
         });
       }
     }
@@ -184,7 +186,66 @@ export const aStarWithEuclidean = (
   if (step) pathNodes.unshift(step); // Add start node
 
   return {
-    distance: distances.get(targetID)!,
+    distances: distances,
+    nodes: pathNodes,
+    edges: pathEdges,
+  };
+};
+
+export const bellmanFord = (
+  startID: string,
+  targetID: string,
+  nodes: GraphNodeProps[],
+  adjacencyList: Map<string, { id: string; weight: number }[]>
+): SearchOrder => {
+  const distances: Map<string, number> = new Map();
+  const previous: Map<string, string | null> = new Map();
+
+  // Initialize distances and previous nodes
+  nodes.forEach((node) => {
+    distances.set(node.id, Infinity);
+    previous.set(node.id, null);
+  });
+  distances.set(startID, 0);
+
+  // Relax edges |V| - 1 times
+  for (let i = 0; i < nodes.length - 1; i++) {
+    adjacencyList.forEach((neighbours, nodeID) => {
+      for (const { id: neighbourID, weight } of neighbours) {
+        const newDist = distances.get(nodeID)! + weight;
+        if (newDist < distances.get(neighbourID)!) {
+          distances.set(neighbourID, newDist);
+          previous.set(neighbourID, nodeID);
+        }
+      }
+    });
+  }
+
+  // Check for negative weight cycles
+  adjacencyList.forEach((neighbours, nodeID) => {
+    for (const { id: neighbourID, weight } of neighbours) {
+      if (distances.get(nodeID)! + weight < distances.get(neighbourID)!) {
+        throw new Error("Graph contains a negative weight cycle.");
+      }
+    }
+  });
+
+  // Reconstruct the path (nodes & edges)
+  const pathNodes: string[] = [];
+  const pathEdges: [string, string][] = [];
+  let step: string = targetID;
+
+  while (previous.get(step)) {
+    const from = previous.get(step)!;
+    pathNodes.unshift(step);
+    pathEdges.unshift([from, step]);
+    step = from;
+  }
+
+  if (step) pathNodes.unshift(step); // Add start node
+
+  return {
+    distances: distances,
     nodes: pathNodes,
     edges: pathEdges,
   };

@@ -17,16 +17,39 @@
 
 .right-sidebar {
     position: absolute;
+    justify-content: center;
+    align-items: center;
+    padding: 5px;
+    padding-top: 6vh;
     right: 0px;
     background-color: white;
-    border: 2px gray;
+    border: solid gray;
+    border-width: 1px;
     border-radius: 10px;
-    width: 18vw;
+    width: 19vw;
+    height: 105vh;
 }
 
 .left-sidebar {
     position: absolute;
     left: 0px;
+}
+
+.bottom-bar {
+    position: absolute;
+    width: 100vw;
+    bottom: 0vh;
+    height: 15vh;
+    display: flex;
+    fill: rgba(0,0,0,100);
+}
+
+.animation-bar {
+    display: flex;
+    position: relative;
+    width: auto;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 input, 
@@ -37,15 +60,25 @@ button {
     font-size: small;
 }
 
-label {
+label,
+p {
     font-size: medium;
     font-family: Arial, Helvetica, sans-serif;
 }
 
 
 #adj-list {
-    border-radius: 10px;
     overflow: auto;
-    height:400px
+    height: 400px;
+    border: solid lightslategray;
+    border-width: 1px 0px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+#info {
+    font-weight: bolder;
+    font-size: x-large;
+    color: lightgray;
 }
 
