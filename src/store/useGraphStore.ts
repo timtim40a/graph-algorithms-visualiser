@@ -19,7 +19,7 @@ type GraphEdge = {
   targetID: string;
   weight: number;
   directed: boolean;
-  activeAnimation: boolean;
+  activeAnimation: number;
 }
 
 type GraphState = {
@@ -107,7 +107,7 @@ const useGraphStore = create<GraphState>((set) => ({
           targetID, 
           weight: 1, 
           directed: false, 
-          activeAnimation: false}],
+          activeAnimation: 0}],
       })),
   
     removeEdge: (id) =>

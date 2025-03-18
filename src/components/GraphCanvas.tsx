@@ -11,6 +11,7 @@ import { source } from "framer-motion/client";
 import InformationWindow from "./InformationWindow";
 import AnimationElement from "./AnimationElement";
 import { error } from "console";
+import DistancesTable from "./DistancesTable";
 
 type GraphCanvasProps = {
     canvasHeight?: number;
@@ -71,7 +72,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
 
     const [isAnimationPaused, setIsAnimationPaused] = useState(false);
     const [animationIndex, setAnimationIndex] = useState(0);
-    const [animationFrames, setAnimationFrames] = useState<[string, string][]>([]);
+    const [animationFrames, setAnimationFrames] = useState<Map<[string, string] ,number>[]>([]);
     const [searchOrder, setSearchOrder] = useState<SearchOrder>()
 
     useEffect(() => {
@@ -167,8 +168,11 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
             console.warn("Dijkstra algorithm requires two nodes selected.");
             setMessage(["Dijkstra algorithm requires two nodes selected.", "error"])
             return null;
-        }
-        if (edges.some((edge) => edge.weight < 0)) {
+        } else if (isGraphNegativeCyclic) {
+            console.warn("The graph contains negative cycle(s). Dijkstra algorithm will not run as it will lead to crash due to infinite traverse of the cycle.");
+            setMessage(["The graph contains negative cycle(s). Dijkstra algorithm will not run as it will lead to crash due to infinite traverse of the cycle.", "alert"])
+            return null;
+        } else if (edges.some((edge) => edge.weight < 0)) {
             console.warn("The graph contains negative weights. Dijkstra algorithm may return unexpected paths.");
             setMessage(["The graph contains negative weights. Dijkstra algorithm may return unexpected paths.", "alert"])
             return null;
@@ -181,7 +185,11 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
             console.warn("A* algorithm requires two nodes selected.");
             setMessage(["A* algorithm requires two nodes selected.", "error"]);
             return null;
-        } if (edges.some((edge) => edge.weight < 0)) {
+        } else if (isGraphNegativeCyclic) {
+            console.warn("The graph contains negative cycle(s). A* algorithm will not run as it will lead to crash due to infinite traverse of the cycle.");
+            setMessage(["The graph contains negative cycle(s). A* algorithm will not run as it will lead to crash due to infinite traverse of the cycle.", "alert"])
+            return null;
+        } else if (edges.some((edge) => edge.weight < 0)) {
             console.warn("The graph contains negative weights. A* algorithm may return unexpected paths.");
             setMessage(["The graph contains negative weights. A* algorithm may return unexpected paths.", "alert"])
             return null;
@@ -217,33 +225,34 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
           }, 10); // Small delay to avoid state update conflicts
       };
     
-      const stopAnimation = (e?: React.MouseEvent<HTMLButtonElement>) => {
+    const stopAnimation = (e?: React.MouseEvent<HTMLButtonElement>) => {
         e ? e.stopPropagation : null;
         setIsAnimationOn(false);
         setIsAnimationPaused(false);
         setAnimationIndex(0);
         setAnimationFrames([]);
-        edges.forEach((edge) => edge.activeAnimation = false)
-      };
+        edges.forEach((edge) => edge.activeAnimation = 0)
+    };
     
-      const pauseAnimation = () => setIsAnimationPaused(true);
-      const resumeAnimation = () => setIsAnimationPaused(false);
+    const pauseAnimation = () => setIsAnimationPaused(true);
+    const resumeAnimation = () => setIsAnimationPaused(false);
       
-      const nextFrame = () => {
+    const nextFrame = () => {
         if (animationIndex < animationFrames.length - 1) {
             setAnimationIndex((prev) => prev + 1);
         }
-        const [nodeA, nodeB] = animationFrames[animationIndex];
-        const edgeID = "e" + nodeA + nodeB;
-        const edgeReverseID = "e" + nodeB + nodeA;
-        const edgeToAnimate = edges.find((edge) => edge.id === edgeID || edge.id === edgeReverseID);
+        animationFrames[animationIndex].forEach((animationMode, nodes) => {
+            const edgeID = "e" + nodes[0] + nodes[1];
+            const edgeReverseID = "e" + nodes[1] + nodes[0];
+            const edgeToAnimate = edges.find((edge) => edge.id === edgeID || edge.id === edgeReverseID);
 
-        if (edgeToAnimate) {
-        alterEdge(edgeToAnimate.id, { activeAnimation: true });
-        }
+            if (edgeToAnimate) {
+            alterEdge(edgeToAnimate.id, { activeAnimation: animationMode });
+            }
 
-        console.log(edgeToAnimate);
-      };
+            console.log(edgeToAnimate);
+        });
+    };
 
     const deleteAll = (e: React.MouseEvent<HTMLButtonElement>, kind: string = "nodes") => {
         e.stopPropagation()
@@ -268,6 +277,8 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
             setIsCreatingEdge(false);
         }
         setSelectedNodes(["none"]);
+        stopAnimation();
+        nodes.length > 2 ? getBellmanFord(nodes[0].id, nodes[1].id) : null
     }, [isEditModeOn]);
 
     useEffect(() => {
@@ -280,16 +291,18 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
         if (!isAnimationOn || isAnimationPaused || animationIndex >= animationFrames.length) return;
     
         const animateFrame = async () => {
-          const [nodeA, nodeB] = animationFrames[animationIndex];
-          const edgeID = "e" + nodeA + nodeB;
-          const edgeReverseID = "e" + nodeB + nodeA;
-          const edgeToAnimate = edges.find((edge) => edge.id === edgeID || edge.id === edgeReverseID);
+            animationFrames[animationIndex].forEach((animationMode, nodes) => {
+                const edgeID = "e" + nodes[0] + nodes[1];
+                const edgeReverseID = "e" + nodes[1] + nodes[0];
+                const edgeToAnimate = edges.find((edge) => edge.id === edgeID || edge.id === edgeReverseID);
     
-          if (edgeToAnimate) {
-            alterEdge(edgeToAnimate.id, { activeAnimation: true });
-          }
+                if (edgeToAnimate) {
+                alterEdge(edgeToAnimate.id, { activeAnimation: animationMode });
+                }
     
-          console.log(edgeToAnimate);
+                console.log(nodes);
+                console.log(animationMode)
+            });
     
           await new Promise((resolve) => setTimeout(resolve, 1000));
           setAnimationIndex((prev) => prev + 1);
@@ -406,15 +419,15 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
                                 <AnimationElement 
                                     key={"anima"+node}       
                                     node={node}                   
-                                    visible={animationFrames.slice(0,animationIndex).some(([_, n]) => node === n) || animationIndex === 0}
-                                    active={animationIndex > 0 ? animationFrames[animationIndex-1].includes(node) : false}
-                                    weight={searchOrder.distances ? String(searchOrder.distances.get(node)) : undefined}>
+                                    weight={searchOrder.distances && animationIndex < searchOrder.distances.length - 1 ? String(searchOrder.distances[animationIndex].get(node)) : undefined}>
                                 </AnimationElement>
                                 </>
                             ))}
-                                <p></p>
-                                <p>{searchOrder ? searchOrder.distances : null}</p>
+                            <br></br>
+                            <DistancesTable key={"dist-table"} distances={searchOrder?.distances} animationIndex={animationIndex > 0 ? animationIndex -1 : animationIndex}/>
+                            
                             </div>
+                            
                         </div>
                     : null}
             </div>

@@ -39,7 +39,7 @@
     position: absolute;
     width: 100vw;
     bottom: 0vh;
-    height: 15vh;
+    height: 25vh;
     display: flex;
     fill: rgba(0,0,0,100);
 }

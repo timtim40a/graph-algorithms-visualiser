@@ -13,8 +13,8 @@ export type GraphEdgeProps = {
     sourceID: string;
     targetID: string;
     weight: number;
-    directed: boolean;
-    activeAnimation: boolean
+    activeAnimation: number;
+    
 }
 
 export type AdjacencyListElementProps = {
@@ -29,13 +29,16 @@ export type MessageProps = {
 
 export type SearchOrder = {
     nodes: string[];
-    edges: [string, string][];
-    distances?: Map<string, number>;
+    edges: Map<[string, string], number>[];
+    distances?: Map<string, number>[];
 }
 
 export type AnimationElementProps = {
     node: string;
-    visible: boolean;
-    active: boolean;
     weight?: string;
 }
+
+export type DistancesTableProps = {
+    distances: Map<string, number>[] | undefined, 
+    animationIndex: number
+} 

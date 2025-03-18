@@ -1,0 +1,18 @@
+.table {
+    display: flexbox;
+    position: absolute;
+}
+
+.row-table {
+    display: flex;
+    position: relative;
+    top: 50px;
+}
+
+.h-label-table {
+    width: 90px;
+}
+
+.label-table {
+    width: 30px;
+}

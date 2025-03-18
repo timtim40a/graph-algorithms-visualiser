@@ -4,7 +4,7 @@ import "../styles/GraphEdge.css";
 import { text } from "stream/consumers";
 import useGraphStore from "@/store/useGraphStore";
 
-const GraphEdge: React.FC<GraphEdgeProps> = ({id, sourceID, targetID, weight, directed, activeAnimation = false}) => {
+const GraphEdge: React.FC<GraphEdgeProps> = ({id, sourceID, targetID, weight, activeAnimation = 0}) => {
 
     const { nodes, isGraphDirected } = useGraphStore()
     
@@ -44,11 +44,31 @@ const GraphEdge: React.FC<GraphEdgeProps> = ({id, sourceID, targetID, weight, di
             markerHeight="6"
             orient="auto-start-reverse">
                 <path d="M 0 0 L 10 5 L 0 10 z" />
-                {activeAnimation ? 
+                {activeAnimation == 1 ? 
+                <animate
+                    attributeName="fill"
+                    from="rgb(0,0,0)"
+                    to="rgb(200,150,20)"
+                    begin="0s"
+                    dur="9s"
+                    fill="freeze"
+                /> 
+                : null}
+                {activeAnimation == 2 ? 
                 <animate
                     attributeName="fill"
                     from="rgb(0,0,0)"
                     to="rgb(0,128,0)"
+                    begin="0s"
+                    dur="9s"
+                    fill="freeze"
+                /> 
+                : null}
+                {activeAnimation == 3 ? 
+                <animate
+                    attributeName="fill"
+                    from="rgb(0,0,0)"
+                    to="rgb(200,200,200)"
                     begin="0s"
                     dur="9s"
                     fill="freeze"
@@ -66,11 +86,31 @@ const GraphEdge: React.FC<GraphEdgeProps> = ({id, sourceID, targetID, weight, di
             strokeWidth="3px"
             stroke="rgb(0,0,0)"
             markerEnd={isGraphDirected ? "url(#arrow)" : undefined}>
-            {activeAnimation ? 
+            {activeAnimation == 1 ? 
+                <animate
+                    attributeName="stroke"
+                    from="rgb(0,0,0)"
+                    to="rgb(200,150,20)"
+                    begin="0s"
+                    dur="9s"
+                    fill="freeze"
+                /> 
+                : null}
+                {activeAnimation == 2 ? 
                 <animate
                     attributeName="stroke"
                     from="rgb(0,0,0)"
                     to="rgb(0,128,0)"
+                    begin="0s"
+                    dur="9s"
+                    fill="freeze"
+                /> 
+                : null}
+                {activeAnimation == 3 ? 
+                <animate
+                    attributeName="stroke"
+                    from="rgb(0,0,0)"
+                    to="rgb(200,200,200)"
                     begin="0s"
                     dur="9s"
                     fill="freeze"
