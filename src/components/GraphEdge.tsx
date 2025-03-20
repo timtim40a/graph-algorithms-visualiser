@@ -78,13 +78,14 @@ const GraphEdge: React.FC<GraphEdgeProps> = ({id, sourceID, targetID, weight, ac
         </defs>
         <line
             id={isGraphDirected ? "e" + sourceID + targetID : id}
-            //className={activeAnimation ? "animated-edge" : "edge"}
+            /*className={activeAnimation === 4 ? "heuristics-edge" : "edge"}*/
             x1={sourceX}
             y1={sourceY}
             x2={isGraphDirected ? edgeEndX : targetX}
             y2={isGraphDirected ? edgeEndY : targetY}
             strokeWidth="3px"
-            stroke="rgb(0,0,0)"
+            stroke={activeAnimation === 4 ? "rgb(100, 149, 237)" : "rgb(0,0,0)"}
+            strokeDasharray={activeAnimation === 4 ? "4 1" : undefined}
             markerEnd={isGraphDirected ? "url(#arrow)" : undefined}>
             {activeAnimation == 1 ? 
                 <animate

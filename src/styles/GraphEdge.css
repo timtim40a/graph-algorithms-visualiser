@@ -20,5 +20,8 @@
 
 .edge {
     stroke: black;
+}
 
+.heuristics-edge { 
+    stroke: rgb(100, 149, 237);
 }

@@ -9,7 +9,7 @@ type GraphNode = {
   selected: boolean;
   x: number;
   y: number;
-  onFrontier: boolean;
+  activeAnimation: number;
   onClick: ((event: React.MouseEvent<HTMLDivElement>, id: string) => void);
 }
 
@@ -71,7 +71,7 @@ const useGraphStore = create<GraphState>((set) => ({
           value, 
           x, y, 
           selected: false, 
-          onFrontier: false, 
+          activeAnimation: 0, 
           onClick}],
       })),
   

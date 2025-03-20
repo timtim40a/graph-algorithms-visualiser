@@ -3,7 +3,7 @@ import "../styles/GraphNode.css"
 import { root } from "postcss";
 import { GraphNodeProps } from "@/app/types";
 
-const GraphNode: React.FC<GraphNodeProps> = ({id, value, selected, x, y, onFrontier, onClick}) => {
+const GraphNode: React.FC<GraphNodeProps> = ({id, value, selected, x, y, activeAnimation, onClick}) => {
 
     //const nodeSize = Number(getComputedStyle().getPropertyValue("--node-size").slice(0,-2))
     const nodeSize = 30
@@ -13,9 +13,17 @@ const GraphNode: React.FC<GraphNodeProps> = ({id, value, selected, x, y, onFront
         if (selected) {
             c += " selected"
         }
-        if (onFrontier) {
+        
+        if (activeAnimation === 1) {
+            c += " not-observed"
+        } else if (activeAnimation === 2) {
+            c += " current"
+        } else if (activeAnimation === 3) {
             c += " on-frontier"
+        } else if (activeAnimation === 4) {
+            c += " observed"
         }
+
         return c
     }
 

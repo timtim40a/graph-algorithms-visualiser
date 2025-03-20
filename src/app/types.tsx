@@ -4,7 +4,7 @@ export type GraphNodeProps = {
     selected: boolean;
     x: number;
     y: number;
-    onFrontier: boolean;
+    activeAnimation: number;
     onClick: ((event: React.MouseEvent<HTMLDivElement>, id: string) => void);
 }
 
@@ -28,9 +28,10 @@ export type MessageProps = {
 }
 
 export type SearchOrder = {
-    nodes: string[];
+    nodes: Map<string, number>[];
     edges: Map<[string, string], number>[];
     distances?: Map<string, number>[];
+    heuristics?: Map<string, number>;
 }
 
 export type AnimationElementProps = {
@@ -39,6 +40,7 @@ export type AnimationElementProps = {
 }
 
 export type DistancesTableProps = {
+    animationIndex: number,
     distances: Map<string, number>[] | undefined, 
-    animationIndex: number
+    heuristics?: Map<string, number>
 } 

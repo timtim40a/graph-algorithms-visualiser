@@ -1,7 +1,7 @@
 import { DistancesTableProps, SearchOrder } from "@/app/types"
 import "@/styles/DistancesTable.css"
 
-const DistancesTable: React.FC<DistancesTableProps> = ({distances, animationIndex}) => {
+const DistancesTable: React.FC<DistancesTableProps> = ({distances, animationIndex, heuristics}) => {
 
     if (!distances) {return null}
     const nodes = Array.from(distances[animationIndex].keys())
@@ -28,6 +28,19 @@ const DistancesTable: React.FC<DistancesTableProps> = ({distances, animationInde
                 ))}
                 </>
             </div>
+            {heuristics ?
+                <>
+                    <br></br>
+                    <div className="row-table">
+                        <label className="h-label-table">Euclidean {'\n'} Distance to:</label>
+                        <>
+                        {nodes.map((node) => (
+                            <label className="label-table">{heuristics.get(node)}</label>
+                        ))}
+                        </>
+                    </div>
+                </>
+            : null}
             </div>
         </>
     )

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, ChangeEvent } from "react";
+import React, { useState, useEffect, useRef, ChangeEvent, ReactNode } from "react";
 import "../styles/GraphCanvas.css";
 import GraphNode from "./GraphNode";
 import GraphEdge from "./GraphEdge";
@@ -71,8 +71,9 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
     const divRef = useRef<HTMLDivElement | null>(null);
 
     const [isAnimationPaused, setIsAnimationPaused] = useState(false);
+    const [animationSpeed, setAnimationSpeed] = useState(1000)
     const [animationIndex, setAnimationIndex] = useState(0);
-    const [animationFrames, setAnimationFrames] = useState<Map<[string, string] ,number>[]>([]);
+    const [animationFrames, setAnimationFrames] = useState<[Map<[string, string] ,number>[],Map<string,number>[]]>([[],[]]);
     const [searchOrder, setSearchOrder] = useState<SearchOrder>()
 
     useEffect(() => {
@@ -220,7 +221,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
         
         setTimeout(() => {
             setAnimationIndex(0);
-            setAnimationFrames(newSearchOrder.edges);
+            setAnimationFrames([newSearchOrder.edges,newSearchOrder.nodes]);
             setIsAnimationOn(true);
           }, 10); // Small delay to avoid state update conflicts
       };
@@ -230,20 +231,19 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
         setIsAnimationOn(false);
         setIsAnimationPaused(false);
         setAnimationIndex(0);
-        setAnimationFrames([]);
+        setAnimationFrames([[],[]]);
         edges.forEach((edge) => edge.activeAnimation = 0)
+        nodes.forEach((node) => node.activeAnimation = 0)
     };
     
     const pauseAnimation = () => setIsAnimationPaused(true);
     const resumeAnimation = () => setIsAnimationPaused(false);
       
     const nextFrame = () => {
-        if (animationIndex < animationFrames.length - 1) {
-            setAnimationIndex((prev) => prev + 1);
-        }
-        animationFrames[animationIndex].forEach((animationMode, nodes) => {
-            const edgeID = "e" + nodes[0] + nodes[1];
-            const edgeReverseID = "e" + nodes[1] + nodes[0];
+        
+        animationFrames[0][animationIndex].forEach((animationMode, animationNodes) => {
+            const edgeID = "e" + animationNodes[0] + animationNodes[1];
+            const edgeReverseID = "e" + animationNodes[1] + animationNodes[0];
             const edgeToAnimate = edges.find((edge) => edge.id === edgeID || edge.id === edgeReverseID);
 
             if (edgeToAnimate) {
@@ -252,6 +252,13 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
 
             console.log(edgeToAnimate);
         });
+        animationFrames[1][animationIndex].forEach((animationMode, animationNode) => {
+            alterNode(animationNode, { activeAnimation: animationMode })
+            console.log(animationNode + " mode: " + animationMode + " index: " + animationIndex)
+        })
+        if (animationIndex < animationFrames[0].length - 1) {
+            setAnimationIndex((prev) => prev + 1);
+        }
     };
 
     const deleteAll = (e: React.MouseEvent<HTMLButtonElement>, kind: string = "nodes") => {
@@ -271,6 +278,27 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
         setAdjInput(event.target.value);
     }
 
+    const heuristicsEdges = (): ReactNode => {
+        const edges: ReactNode[] = [];
+    
+        searchOrder?.nodes[animationIndex]?.forEach((animationMode, node) => {
+            if (animationMode === 2) {
+                edges.push(
+                    <GraphEdge
+                        key={node}
+                        id={node.toString()}
+                        sourceID={node}
+                        targetID={selectedNodes[selectedNodes.length - 1]} // Fixed negative index issue
+                        weight={searchOrder.heuristics?.get(node)!}
+                        activeAnimation={4}
+                    />
+                );
+            }
+        });
+    
+        return edges;
+    };
+
     useEffect(() => {
         if (!isEditModeOn) {
             setIsDeletingNode(false);
@@ -283,33 +311,35 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
 
     useEffect(() => {
         if (!isAnimationOn || !searchOrder) return;
-        setAnimationFrames(searchOrder.edges);
+        setAnimationFrames([searchOrder.edges, searchOrder.nodes]);
         setAnimationIndex(0);
       }, [searchOrder, isAnimationOn]);
 
     useEffect(() => {
-        if (!isAnimationOn || isAnimationPaused || animationIndex >= animationFrames.length) return;
+        if (!isAnimationOn || isAnimationPaused || animationIndex >= animationFrames[0].length) return;
     
         const animateFrame = async () => {
-            animationFrames[animationIndex].forEach((animationMode, nodes) => {
-                const edgeID = "e" + nodes[0] + nodes[1];
-                const edgeReverseID = "e" + nodes[1] + nodes[0];
+            animationFrames[0][animationIndex].forEach((animationMode, animationNodes) => {
+                const edgeID = "e" + animationNodes[0] + animationNodes[1];
+                const edgeReverseID = "e" + animationNodes[1] + animationNodes[0];
                 const edgeToAnimate = edges.find((edge) => edge.id === edgeID || edge.id === edgeReverseID);
     
                 if (edgeToAnimate) {
                 alterEdge(edgeToAnimate.id, { activeAnimation: animationMode });
                 }
     
-                console.log(nodes);
-                console.log(animationMode)
+                console.log(edgeToAnimate);
             });
+            animationFrames[1][animationIndex].forEach((animationMode, animationNode) => {
+                alterNode(animationNode, { activeAnimation: animationMode })
+                console.log(animationNode + " mode: " + animationMode + " index: " + animationIndex)
+            })
     
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-          setAnimationIndex((prev) => prev + 1);
+            await new Promise((resolve) => setTimeout(resolve, animationSpeed));
+            setAnimationIndex((prev) => prev + 1);
         };
-    
         animateFrame();
-      }, [animationIndex, isAnimationOn, isAnimationPaused, animationFrames]);
+      }, [animationIndex, isAnimationOn, isAnimationPaused, animationSpeed]);
 
     useEffect(() => {
         console.log(`Edge creation mode is now: ${isCreatingEdge ? "ON" : "OFF"}`);
@@ -333,13 +363,13 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
             <div id="main" className="canvas" ref={divRef} tabIndex={0} onClick={handleCanvasClick} onKeyDown={handleHotkey}>
             {nodes.length === 0 ? <label id="info"> {isEditModeOn ? "Click anywhere to place a node" : "The edit mode is off. Turn on the edit mode by pressing \"E\"" } </label> : null}
                 <div className="left-sidebar">
-                    <button onClick={toggleEditMode} className={isEditModeOn ? "button pressed" : "button not-pressed"}>{isEditModeOn ? "Edit Mode ON" : "Edit Mode OFF"}</button>
+                    <button onClick={toggleEditMode} className={isEditModeOn ? "button pressed" : "button not-pressed"}>{isEditModeOn ? <img src="/editmode-return.png" alt="Back to View Mode" className="icon"/> : <img src="/editmode.png" alt="Enter Edit Mode" className="icon"/>}</button>
                     <br></br>
                     {isEditModeOn ? (
                         <>
-                            <button onClick={toggleEdgeCreation} className={isCreatingEdge ? "button pressed" : "button not-pressed"}>{isCreatingEdge ? "Edges ON" : "Edges OFF"}</button>
+                            <button onClick={toggleEdgeCreation} className={isCreatingEdge ? "button pressed" : "button not-pressed"}><img src="/edges.png" alt="Toggle Edges" className="icon"/></button>
                             <br></br>
-                            <button onClick={toggleNodeDeletion} className={isDeletingNode ? "button pressed" : "button not-pressed"}>{isDeletingNode ? "Delete Nodes ON" : "Delete Nodes OFF"}</button>
+                            <button onClick={toggleNodeDeletion} className={isDeletingNode ? "button pressed" : "button not-pressed"}><img src="/nodes.png" alt="Delete Nodes" className="icon"/></button>
                             <br></br>
                             <button onClick={(e) => deleteAll(e, 'nodes')}>Clear</button>
                             <br></br>
@@ -375,11 +405,11 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
                                 Stop Animation
                             </button>
                             <br></br>
-                            <button onClick={pauseAnimation} disabled={isAnimationPaused || animationIndex > animationFrames.length - 1}>Pause</button>
+                            <button onClick={pauseAnimation} disabled={isAnimationPaused || animationIndex > animationFrames[0].length - 1}>Pause</button>
                             <br></br>
-                            <button onClick={resumeAnimation} disabled={!isAnimationPaused || animationIndex > animationFrames.length - 1}>Resume</button>
+                            <button onClick={resumeAnimation} disabled={!isAnimationPaused || animationIndex > animationFrames[0].length - 1}>Resume</button>
                             <br></br>
-                            <button onClick={nextFrame} disabled={!isAnimationPaused || animationIndex > animationFrames.length - 1}>Next Frame</button>
+                            <button onClick={nextFrame} disabled={!isAnimationPaused || animationIndex > animationFrames[0].length - 1}>Next Frame</button>
                             <br></br>
                             </>) : null}
                         </>
@@ -392,6 +422,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
                     {edges.map((edge) => (
                         <GraphEdge key={edge.id} {...edge} />
                     ))}
+                    {isAnimationOn && searchOrder?.heuristics ? heuristicsEdges() : null}
                 </svg>
                 {nodes.map((node) => (
                     <GraphNode key={node.id} {...node} onClick={() => handleNodeClick(node.id)}/>
@@ -414,7 +445,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
                     { isAnimationOn ? 
                         <div className="bottom-bar">
                             <div className="animation-bar">
-                            {searchOrder?.nodes.map((node) => (
+                            {/*{searchOrder?.nodes.map((node) => (
                                 <>
                                 <AnimationElement 
                                     key={"anima"+node}       
@@ -422,9 +453,9 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({ canvasHeight = 200, canvasWid
                                     weight={searchOrder.distances && animationIndex < searchOrder.distances.length - 1 ? String(searchOrder.distances[animationIndex].get(node)) : undefined}>
                                 </AnimationElement>
                                 </>
-                            ))}
+                            ))}*/}
                             <br></br>
-                            <DistancesTable key={"dist-table"} distances={searchOrder?.distances} animationIndex={animationIndex > 0 ? animationIndex -1 : animationIndex}/>
+                            <DistancesTable key={"dist-table"} distances={searchOrder?.distances} animationIndex={animationIndex > 0 ? animationIndex -1 : animationIndex} heuristics={searchOrder?.heuristics}/>
                             
                             </div>
                             

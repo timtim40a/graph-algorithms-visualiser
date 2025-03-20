@@ -1,6 +1,9 @@
 .table {
     display: flexbox;
     position: absolute;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%);
 }
 
 .row-table {
@@ -11,8 +14,10 @@
 
 .h-label-table {
     width: 90px;
+    border: 1px solid lightgray;
 }
 
 .label-table {
-    width: 30px;
+    width: 40px;
+    border: 1px solid lightgray;
 }
