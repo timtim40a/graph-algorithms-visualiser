@@ -294,3 +294,69 @@ export const bellmanFord = (
     edges,
   };
 };
+
+export const bestFirstSearch = (
+  startID: string,
+  targetID: string,
+  nodes: GraphNodeProps[],
+  adjacencyList: Map<string, { id: string; weight: number }[]>
+): SearchOrder => {
+  const heuristics: Map<string, number> = new Map()
+  const previous: Map<string, string | null> = new Map();
+  const priorityQueue: { id: string; euD: number }[] = [];
+  const edges: Map<[string, string],number>[] = [new Map()];
+  const animationNodes: Map<string, number>[] = [new Map()];
+  const nodeMap = new Map(nodes.map((node) => [node.id, node]));
+  let i = 0;
+  adjacencyList.forEach((_, node) => {
+    heuristics.set(node, euclideanDistance(nodeMap.get(node)!, nodeMap.get(targetID)!))
+    animationNodes[i].set(node, 1)
+    previous.set(node, null);
+  });
+
+  priorityQueue.push({
+    id: startID,
+    euD: heuristics.get(startID)!,
+  });
+
+  while (priorityQueue.length > 0) {
+    priorityQueue.forEach((node) => animationNodes[i].set(node.id, 3));
+    i += 1;
+    edges.push(new Map())
+    animationNodes.push(new Map(animationNodes[-1]))
+    priorityQueue.sort((a, b) => a.euD - b.euD);
+    const { id: currentNode } = priorityQueue.shift()!;
+    previous.forEach((node1, node2, _) => node1 ? animationNodes[i].set(node1, 4) : null)
+    animationNodes[i].set(currentNode, 2);
+
+    if (currentNode === targetID) break;
+
+    for (const neighbour of adjacencyList.get(currentNode) || []) {
+      const euD = heuristics.get(neighbour.id)
+      if (heuristics.get(currentNode)! > euD!) {
+        edges[i].set([currentNode, neighbour.id], 1)
+        previous.set(neighbour.id, currentNode);
+        console.log(euD)
+        priorityQueue.push({
+          id: neighbour.id,
+          euD: euD!,
+        });
+      }
+    }
+  }
+  // Reconstruct path as nodes and edges
+
+  let step: string = targetID;
+
+  while (previous.get(step)) {
+    const from = previous.get(step)!;
+    edges[i].set([from, step], 2);
+    step = from;
+  }
+
+  return {
+    nodes: animationNodes,
+    edges,
+    heuristics,
+  };
+};

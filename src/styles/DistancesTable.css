@@ -1,23 +1,30 @@
 .table {
     display: flexbox;
-    position: absolute;
-    top: 30%;
-    left: 50%;
+    position: fixed;
+    bottom: 5%;
+    left: 45%;
     transform: translate(-50%);
+    overflow: scroll;
+    width: 600px;
+    background-color: white;
+
 }
 
 .row-table {
     display: flex;
     position: relative;
     top: 50px;
+    width: fit-content;
 }
 
 .h-label-table {
-    width: 90px;
+    width: 150px;
     border: 1px solid lightgray;
+    padding: 5px;
 }
 
 .label-table {
     width: 40px;
     border: 1px solid lightgray;
+    padding: 5px;
 }

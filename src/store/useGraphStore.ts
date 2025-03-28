@@ -53,6 +53,8 @@ type GraphState = {
     setIsGraphCyclic: (value: boolean) => void;
     setIsGraphNegativeCyclic: (value: boolean) => void;
     setIsAnimationOn: (value: boolean) => void;
+    clearNodes: () => void;
+    clearEdges: () => void;
 }
 
 const useGraphStore = create<GraphState>((set) => ({
@@ -150,6 +152,12 @@ const useGraphStore = create<GraphState>((set) => ({
 
       setIsAnimationOn: (value: boolean) =>
         set((state) => ({isAnimationOn: value})),
+
+      clearNodes: () => 
+        set((state) => ({nodes: []})),
+
+      clearEdges: () => 
+        set((state) => ({edges: []})),
 }));
 
 export default useGraphStore;
