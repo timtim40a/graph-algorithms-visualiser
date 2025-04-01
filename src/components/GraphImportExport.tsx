@@ -1,6 +1,7 @@
-import React from 'react'
+import React, { useRef } from 'react'
 import useGraphStore from '../store/useGraphStore' // Importing Zustand store
 import { GraphEdgeProps, GraphNodeProps, SearchOrder } from '@/app/types'
+import '../styles/GraphImportExport.css'
 
 type GraphData = {
   nodes: GraphNodeProps[]
@@ -18,6 +19,7 @@ const GraphImportExport: React.FC = () => {
     clearNodes,
     clearEdges,
   } = useGraphStore()
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Export Graph to JSON File
   const exportGraph = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
@@ -66,15 +68,22 @@ const GraphImportExport: React.FC = () => {
   }
 
   return (
-    <div>
-      <h2>Graph Import/Export</h2>
+    <div className="import-export">
       <button onClick={(e) => exportGraph(e)}>Export Graph</button>
       <input
         type="file"
         accept=".json"
+        ref={fileInputRef}
+        className="hidden-file-input"
         onChange={importGraph}
-        onClick={(e) => e.stopPropagation()}
       />
+
+      <button
+        className="import-btn"
+        onClick={() => fileInputRef.current?.click()}
+      >
+        Import Graph
+      </button>
     </div>
   )
 }

@@ -1,0 +1,9 @@
+.import-export {
+    display: flex;
+    flex-direction: column;
+    max-width: fit-content;
+}
+
+.hidden-file-input {
+    display: none;
+}

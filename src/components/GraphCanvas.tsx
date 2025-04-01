@@ -19,6 +19,7 @@ import {
   aStarWithEuclidean,
   bellmanFord,
   bestFirstSearch,
+  ucs,
 } from '@/utilities/GraphAlgorithms'
 import useGraphStore from '@/store/useGraphStore'
 import { source } from 'framer-motion/client'
@@ -26,6 +27,8 @@ import InformationWindow from './InformationWindow'
 import AnimationElement from './AnimationElement'
 import { error } from 'console'
 import DistancesTable from './DistancesTable'
+import Header from './Header'
+import pseudocodes from '@/utilities/Pseudocodes'
 
 type GraphCanvasProps = {
   canvasHeight?: number
@@ -46,12 +49,20 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
     edges.forEach((edge) => {
       const neighbours = adjacencyList.get(edge.sourceID) || []
       neighbours.push({ id: edge.targetID, weight: edge.weight })
-      adjacencyList.set(edge.sourceID, neighbours)
+      adjacencyList.set(
+        edge.sourceID,
+        neighbours.sort((a, b) => Number(a.id.slice(1)) - Number(b.id.slice(1)))
+      )
 
       if (!isGraphDirected) {
         const reverseNeighbours = adjacencyList.get(edge.targetID) || []
         reverseNeighbours.push({ id: edge.sourceID, weight: edge.weight })
-        adjacencyList.set(edge.targetID, reverseNeighbours)
+        adjacencyList.set(
+          edge.targetID,
+          reverseNeighbours.sort(
+            (a, b) => Number(a.id.slice(1)) - Number(b.id.slice(1))
+          )
+        )
       }
     })
 
@@ -80,7 +91,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
     setIsGraphNegativeCyclic,
     setIsAnimationOn,
   } = useGraphStore()
-  const [selectedNodes, setSelectedNodes] = useState<string[]>(['none'])
+  const [selectedNodes, setSelectedNodes] = useState<string[]>([])
   const [isCreatingEdge, setIsCreatingEdge] = useState<boolean>(false)
   const [isDeletingNode, setIsDeletingNode] = useState<boolean>(false)
   const [isEditModeOn, setIsEditModeOn] = useState<boolean>(false)
@@ -99,6 +110,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
     [Map<[string, string], number>[], Map<string, number>[]]
   >([[], []])
   const [searchOrder, setSearchOrder] = useState<SearchOrder>()
+  const [currentAlgorithm, setCurrentAlgorithm] = useState<string>('')
 
   useEffect(() => {
     divRef.current ? divRef.current.focus() : null
@@ -205,37 +217,61 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
   }
 
   const getBfsPath = (startID: string) => {
+    setCurrentAlgorithm('breadth-first-search')
+    setMessage(['Breadth-First Search algorithm is now running...', 'log'])
     return bfs(startID, adjList)
   }
 
   const getDfsPath = (startID: string) => {
+    setCurrentAlgorithm('depth-first-search')
+    setMessage(['Depth-First Search algorithm is now running...', 'log'])
     return dfs(startID, adjList)
   }
 
-  const getBestFirstSearch = (sourceID: string, targetID: string) => {
-    if (sourceID === targetID) {
-      console.warn('Dijkstra algorithm requires two nodes selected.')
-      setMessage(['Dijkstra algorithm requires two nodes selected.', 'error'])
+  const getUnicostSearchPath = (sourceID: string, targetID: string) => {
+    setCurrentAlgorithm('universal-cost-search')
+    if (sourceID === targetID || sourceID === 'none' || targetID === 'none') {
+      console.warn(
+        'Universal-Cost Search algorithm requires two nodes selected.'
+      )
+      setMessage([
+        'Universal-Cost Search algorithm requires two nodes selected.',
+        'error',
+      ])
       return null
     }
+    setMessage([
+      `Uniform-Cost Search algorithm is now running to get a path from node ${sourceID} to ${targetID}...`,
+      'log',
+    ])
+    return ucs(sourceID, targetID, adjList)
+  }
+
+  const getBestFirstSearch = (sourceID: string, targetID: string) => {
+    setCurrentAlgorithm('best-first-search')
+    if (sourceID === targetID || sourceID === 'none' || targetID === 'none') {
+      console.warn('Best-First Search algorithm requires two nodes selected.')
+      setMessage([
+        'Best-First Search algorithm requires two nodes selected.',
+        'error',
+      ])
+      return null
+    }
+    setMessage([
+      `Best-First Search algorithm is now running to get a path from node ${sourceID} to ${targetID}...`,
+      'log',
+    ])
     return bestFirstSearch(sourceID, targetID, nodes, adjList)
   }
 
-  const getDijPath = (sourceID: string, targetID: string) => {
-    if (sourceID === targetID) {
-      console.warn('Dijkstra algorithm requires two nodes selected.')
-      setMessage(['Dijkstra algorithm requires two nodes selected.', 'error'])
-      return null
-    } else if (isGraphNegativeCyclic) {
-      console.warn(
-        'The graph contains negative cycle(s). Dijkstra algorithm will not run as it will lead to crash due to infinite traverse of the cycle.'
-      )
-      setMessage([
-        'The graph contains negative cycle(s). Dijkstra algorithm will not run as it will lead to crash due to infinite traverse of the cycle.',
-        'alert',
-      ])
-      return null
-    } else if (edges.some((edge) => edge.weight < 0)) {
+  const getDijPath = (sourceID: string) => {
+    setCurrentAlgorithm('dijkstra')
+    // if (sourceID === targetID) {
+    //   console.warn('Dijkstra algorithm requires two nodes selected.')
+    //   setMessage(['Dijkstra algorithm requires two nodes selected.', 'error'])
+    //   return null
+    // } else
+    if (edges.some((edge) => edge.weight < 0)) {
       console.warn(
         'The graph contains negative weights. Dijkstra algorithm may return unexpected paths.'
       )
@@ -245,22 +281,14 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
       ])
       return null
     }
-    return dijkstra(sourceID, targetID, adjList)
+    setMessage(["Dijkstra's algorithm is now running...", 'log'])
+    return dijkstra(sourceID, adjList)
   }
 
   const getAStarPath = (sourceID: string, targetID: string) => {
-    if (sourceID === targetID) {
+    if (sourceID === targetID || sourceID === 'none' || targetID === 'none') {
       console.warn('A* algorithm requires two nodes selected.')
       setMessage(['A* algorithm requires two nodes selected.', 'error'])
-      return null
-    } else if (isGraphNegativeCyclic) {
-      console.warn(
-        'The graph contains negative cycle(s). A* algorithm will not run as it will lead to crash due to infinite traverse of the cycle.'
-      )
-      setMessage([
-        'The graph contains negative cycle(s). A* algorithm will not run as it will lead to crash due to infinite traverse of the cycle.',
-        'alert',
-      ])
       return null
     } else if (edges.some((edge) => edge.weight < 0)) {
       console.warn(
@@ -272,11 +300,17 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
       ])
       return null
     }
+    setMessage([
+      `A* algorithm is now running to get a path from node ${sourceID} to ${targetID}...`,
+      'log',
+    ])
+    setCurrentAlgorithm('a-star')
     return aStarWithEuclidean(sourceID, targetID, nodes, adjList)
   }
 
   const getBellmanFord = (sourceID: string, targetID: string) => {
-    if (sourceID === targetID) {
+    setCurrentAlgorithm('bellman-ford')
+    if (sourceID === targetID || sourceID === 'none' || targetID === 'none') {
       console.warn('Bellman Ford algorithm requires two nodes selected.')
       setMessage([
         'Bellman Ford algorithm requires two nodes selected.',
@@ -284,6 +318,10 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
       ])
       return null
     }
+    setMessage([
+      `Bellman-Ford algorithm is now running to get a path from node ${sourceID} to ${targetID}...`,
+      'log',
+    ])
     try {
       setIsGraphNegativeCyclic(false)
       return bellmanFord(sourceID, targetID, nodes, adjList)
@@ -468,6 +506,10 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
     switchNodeSelection(selectedNodes)
   }, [selectedNodes])
 
+  useEffect(() => {
+    console.log(pseudocodes.get(currentAlgorithm))
+  }, [currentAlgorithm])
+
   const tenXtenGrid = (e: any) => {
     e.stopPropagation()
     for (let i = 0; i < 10; i += 1) {
@@ -519,7 +561,6 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
           </label>
         ) : null}
         <div className="left-sidebar">
-          <GraphImportExport />
           <button
             onClick={toggleEditMode}
             className={isEditModeOn ? 'button pressed' : 'button not-pressed'}
@@ -577,6 +618,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
           ) : (
             <>
               <button
+                className="algorithm-button"
                 onClick={() =>
                   startAnimation(
                     getBfsPath(selectedNodes[selectedNodes.length - 1])
@@ -587,6 +629,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
               </button>
               <br></br>
               <button
+                className="algorithm-button"
                 onClick={() =>
                   startAnimation(
                     getDfsPath(selectedNodes[selectedNodes.length - 1])
@@ -597,6 +640,21 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
               </button>
               <br></br>
               <button
+                className="algorithm-button"
+                onClick={() =>
+                  startAnimation(
+                    getUnicostSearchPath(
+                      selectedNodes[0],
+                      selectedNodes[selectedNodes.length - 1]
+                    )
+                  )
+                }
+              >
+                Run UCS algorithm
+              </button>
+              <br></br>
+              <button
+                className="algorithm-button"
                 onClick={() =>
                   startAnimation(
                     getBestFirstSearch(
@@ -610,12 +668,10 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
               </button>
               <br></br>
               <button
+                className="algorithm-button"
                 onClick={() =>
                   startAnimation(
-                    getDijPath(
-                      selectedNodes[0],
-                      selectedNodes[selectedNodes.length - 1]
-                    )
+                    getDijPath(selectedNodes[selectedNodes.length - 1])
                   )
                 }
               >
@@ -623,6 +679,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
               </button>
               <br></br>
               <button
+                className="algorithm-button"
                 onClick={() =>
                   startAnimation(
                     getAStarPath(
@@ -636,6 +693,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
               </button>
               <br></br>
               <button
+                className="algorithm-button"
                 onClick={() =>
                   startAnimation(
                     getBellmanFord(
@@ -741,6 +799,9 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
                   Next Frame
                 </button>
                 <br></br>
+                <label className="code-block">
+                  {pseudocodes.get(currentAlgorithm)}
+                </label>
               </>
             )}
           </div>
@@ -775,6 +836,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
           </div>
         ) : null}
       </div>
+      <Header title="GAV"></Header>
     </>
   )
 }

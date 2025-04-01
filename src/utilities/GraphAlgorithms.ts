@@ -1,6 +1,4 @@
 import { GraphEdgeProps, GraphNodeProps, SearchOrder } from '@/app/types'; // Update the path accordingly.
-import { distance } from 'framer-motion';
-
 
 export const bfs = (
   startID: string,
@@ -80,7 +78,7 @@ export const dfs = (
   return {nodes, edges};
 };
 
-export const dijkstra = (
+export const ucs = (
   startID: string,
   targetID: string,
   adjacencyList: Map<string, { id: string; weight: number }[]>
@@ -126,7 +124,6 @@ export const dijkstra = (
       }
     }
   }
-
   // Reconstruct path as nodes and edges
   let step: string = targetID;
   edges.push(new Map())
@@ -140,6 +137,80 @@ export const dijkstra = (
   console.log(distances)
   while (edges.length > distances.length) { distances.push(new Map(distances[-1])) }
   while (edges.length > nodes.length) { nodes.push(new Map(nodes[-1])) }
+  return {
+    distances,
+    nodes,
+    edges,
+  };
+};
+
+export const dijkstra = (
+  startID: string,
+  adjacencyList: Map<string, { id: string; weight: number }[]>
+): SearchOrder => {
+  const distances: Map<string, number>[] = [new Map()];
+  const previous: Map<string, string | null> = new Map();
+  const priorityQueue: { id: string; distance: number }[] = [];
+  const nodes: Map<string, number>[] = [new Map()];
+  const edges: Map<[string, string], number>[] = [new Map()];
+
+
+  let i = 0;
+  adjacencyList.forEach((_, node) => {
+    distances[i].set(node, Infinity);
+    nodes[i].set(node, 1);
+    previous.set(node, null);
+  });
+
+  distances[i].set(startID, 0);
+  priorityQueue.push({ id: startID, distance: 0 });
+
+  while (priorityQueue.length > 0) {
+    priorityQueue.forEach((node) => nodes[i].set(node.id, 3));
+    i += 1;
+    distances[i] = new Map(distances[i - 1]);
+    edges.push(new Map());
+    nodes.push(new Map(nodes[i - 1]));
+    priorityQueue.sort((a, b) => a.distance - b.distance);
+    previous.forEach((node1) => node1 ? nodes[i].set(node1, 4) : null);
+    const { id: currentNode } = priorityQueue.shift()!;
+    nodes[i].forEach((mode, node) => mode === 2 ? nodes[i].set(node, 4) : null)
+    nodes[i].set(currentNode, 2);
+
+    for (const neighbour of adjacencyList.get(currentNode) || []) {
+      const newDist = distances[i - 1].get(currentNode)! + neighbour.weight;
+
+      if (newDist < distances[i - 1].get(neighbour.id)!) {
+        edges[i].set([currentNode, neighbour.id], 1);
+        distances[i].set(neighbour.id, newDist);
+        previous.set(neighbour.id, currentNode);
+        priorityQueue.push({ id: neighbour.id, distance: newDist });
+      }
+    }
+  }
+
+  // Reconstruct paths for all nodes
+
+  
+  const adjacencyListMap = new Map(Object.entries(adjacencyList));
+  adjacencyListMap.forEach((_, node) => {
+    let step: string = node;
+    edges.push(new Map());
+    while (previous.get(step)) {
+      const from = previous.get(step)!;
+      edges[i].set([from, step], 2);
+      step = from;
+      console.log(from)
+    }
+  });
+
+  while (edges.length > distances.length) {
+    distances.push(new Map(distances[distances.length - 1]));
+  }
+  while (edges.length > nodes.length) {
+    nodes.push(new Map(nodes[nodes.length - 1]));
+  }
+
   return {
     distances,
     nodes,
@@ -162,6 +233,7 @@ export const aStarWithEuclidean = (
   nodes: GraphNodeProps[],
   adjacencyList: Map<string, { id: string; weight: number }[]>
 ): SearchOrder => {
+  console.log("A* started...")
   const distances: Map<string, number>[] = [new Map()];
   const heuristics: Map<string, number> = new Map()
   const previous: Map<string, string | null> = new Map();
@@ -242,6 +314,7 @@ export const bellmanFord = (
   const distances: Map<string, number>[] = [new Map()];
   const previous: Map<string, string | null> = new Map();
   const edges: Map<[string, string],number>[] = [new Map()];
+  const animationNodes: Map<string, number>[] = [new Map()];
 
   
   let i = 0;
@@ -257,6 +330,7 @@ export const bellmanFord = (
     i += 1;
     distances[i] = new Map(distances[i-1]);
     edges.push(new Map());
+    animationNodes.push(new Map());
     adjacencyList.forEach((neighbours, nodeID) => {
       for (const { id: neighbourID, weight } of neighbours) {
         const newDist = distances[i-1].get(nodeID)! + weight;
@@ -279,8 +353,9 @@ export const bellmanFord = (
   });
 
   // Reconstruct the path (nodes & edges)
-  const animationNodes: Map<string, number>[] = [new Map()];
+  
   let step: string = targetID;
+  animationNodes.push(new Map())
 
   while (previous.get(step)) {
     const from = previous.get(step)!;
@@ -303,6 +378,7 @@ export const bestFirstSearch = (
 ): SearchOrder => {
   const heuristics: Map<string, number> = new Map()
   const previous: Map<string, string | null> = new Map();
+  const visited: string[] = []
   const priorityQueue: { id: string; euD: number }[] = [];
   const edges: Map<[string, string],number>[] = [new Map()];
   const animationNodes: Map<string, number>[] = [new Map()];
@@ -328,12 +404,13 @@ export const bestFirstSearch = (
     const { id: currentNode } = priorityQueue.shift()!;
     previous.forEach((node1, node2, _) => node1 ? animationNodes[i].set(node1, 4) : null)
     animationNodes[i].set(currentNode, 2);
+    visited.push(currentNode)
 
     if (currentNode === targetID) break;
 
     for (const neighbour of adjacencyList.get(currentNode) || []) {
       const euD = heuristics.get(neighbour.id)
-      if (heuristics.get(currentNode)! > euD!) {
+      if (!visited.includes(neighbour.id)) {
         edges[i].set([currentNode, neighbour.id], 1)
         previous.set(neighbour.id, currentNode);
         console.log(euD)
