@@ -1,18 +1,31 @@
-const InfoTooltip = (
-  x: number,
-  y: number,
-  heading: string,
-  textInput?: string
-) => {
-  const textToDisplay = textInput ? textInput : ''
+import { InfoTooltipProps } from '@/app/types'
+import '../styles/InfoTooltip.css'
+import infoTooltipsContents from '@/utilities/InfoTooltipsContent'
+
+const InfoTooltip: React.FC<InfoTooltipProps> = ({
+  x,
+  y,
+  heading,
+  textInput,
+}) => {
+  const textDefaultContent: [string, string] = infoTooltipsContents.get(
+    heading
+  ) ?? [heading, 'ERROR']
+  const textToDisplay = textInput
+    ? textInput + textDefaultContent[1]
+    : textDefaultContent[1]
 
   return (
     <div
       className="info-tooltip"
       style={{ position: 'absolute', top: y, left: x }}
     >
-      <label>{heading}</label>
+      <label>
+        <b>{textDefaultContent[0]}</b>
+      </label>
       <p>{textToDisplay}</p>
     </div>
   )
 }
+
+export default InfoTooltip

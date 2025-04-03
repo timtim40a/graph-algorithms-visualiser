@@ -29,6 +29,9 @@ import { error } from 'console'
 import DistancesTable from './DistancesTable'
 import Header from './Header'
 import pseudocodes from '@/utilities/Pseudocodes'
+import InfoTooltip from './InfoTooltip'
+import { randomInt } from 'crypto'
+import EdgeWeightRandomizer from './EdgeWeightRandomizer'
 
 type GraphCanvasProps = {
   canvasHeight?: number
@@ -72,6 +75,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
   const {
     nodes,
     edges,
+    currentInfoTooltip,
     isGraphDirected,
     isGraphCyclic,
     isGraphNegativeCyclic,
@@ -86,6 +90,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
     sortEdges,
     clearEdges,
     switchNodeSelection,
+    setCurrentInfoTooltip,
     setIsGraphDirected,
     setIsGraphCyclic,
     setIsGraphNegativeCyclic,
@@ -618,7 +623,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
           ) : (
             <>
               <button
-                className="algorithm-button"
+                className="algorithm-button bfs"
                 onClick={() =>
                   startAnimation(
                     getBfsPath(selectedNodes[selectedNodes.length - 1])
@@ -629,7 +634,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
               </button>
               <br></br>
               <button
-                className="algorithm-button"
+                className="algorithm-button dfs"
                 onClick={() =>
                   startAnimation(
                     getDfsPath(selectedNodes[selectedNodes.length - 1])
@@ -640,7 +645,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
               </button>
               <br></br>
               <button
-                className="algorithm-button"
+                className="algorithm-button ucs"
                 onClick={() =>
                   startAnimation(
                     getUnicostSearchPath(
@@ -654,7 +659,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
               </button>
               <br></br>
               <button
-                className="algorithm-button"
+                className="algorithm-button bestfs"
                 onClick={() =>
                   startAnimation(
                     getBestFirstSearch(
@@ -668,7 +673,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
               </button>
               <br></br>
               <button
-                className="algorithm-button"
+                className="algorithm-button dijkstra"
                 onClick={() =>
                   startAnimation(
                     getDijPath(selectedNodes[selectedNodes.length - 1])
@@ -679,7 +684,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
               </button>
               <br></br>
               <button
-                className="algorithm-button"
+                className="algorithm-button a-star"
                 onClick={() =>
                   startAnimation(
                     getAStarPath(
@@ -693,7 +698,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
               </button>
               <br></br>
               <button
-                className="algorithm-button"
+                className="algorithm-button bellman-ford"
                 onClick={() =>
                   startAnimation(
                     getBellmanFord(
@@ -740,6 +745,12 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
           />
         ))}
         <div className="right-sidebar">
+          {isEditModeOn ? (
+            <>
+              <EdgeWeightRandomizer />
+              <br></br>
+            </>
+          ) : null}
           <div
             onClick={(event) => {
               event.stopPropagation()
@@ -765,12 +776,16 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
                 ))
             ) : (
               <>
-                <button onClick={(e) => stopAnimation(e)}>
+                <button
+                  onClick={(e) => stopAnimation(e)}
+                  className="animation-button stop"
+                >
                   Stop Animation
                 </button>
                 <br></br>
                 <button
                   onClick={pauseAnimation}
+                  className="animation-button pause"
                   disabled={
                     isAnimationPaused ||
                     animationIndex > animationFrames[0].length - 1
@@ -781,6 +796,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
                 <br></br>
                 <button
                   onClick={resumeAnimation}
+                  className="animation-button resume"
                   disabled={
                     !isAnimationPaused ||
                     animationIndex > animationFrames[0].length - 1
@@ -791,6 +807,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
                 <br></br>
                 <button
                   onClick={nextFrame}
+                  className="animation-button next-frame"
                   disabled={
                     !isAnimationPaused ||
                     animationIndex > animationFrames[0].length - 1
@@ -837,6 +854,13 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
         ) : null}
       </div>
       <Header title="GAV"></Header>
+      {currentInfoTooltip ? (
+        <InfoTooltip
+          x={currentInfoTooltip.x}
+          y={currentInfoTooltip.y}
+          heading={currentInfoTooltip.header}
+        ></InfoTooltip>
+      ) : null}
     </>
   )
 }

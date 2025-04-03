@@ -1,6 +1,7 @@
 /* This is the key storage file for all of the session related data including graph's current state, 
 nodes and edges. Types and the functions to alter the state are declared here. Written with Zustand.*/
 
+import { cursorTo } from "readline";
 import { create } from "zustand";
 
 type GraphNode = {
@@ -22,9 +23,17 @@ type GraphEdge = {
   activeAnimation: number;
 }
 
+type InfoTooltip = {
+  x: number;
+  y: number;
+  header: string;
+  text?: string;
+}
+
 type GraphState = {
     nodes: GraphNode[];
     edges: GraphEdge[];
+    currentInfoTooltip: InfoTooltip | undefined;
     isGraphDirected: boolean;
     isGraphCyclic: boolean;
     isGraphNegativeCyclic: boolean;
@@ -49,6 +58,7 @@ type GraphState = {
     alterEdge: (id: string,
                 updatedProps: object) => void;
     sortEdges: (order: string) => void;
+    setCurrentInfoTooltip: (tooltip: InfoTooltip | undefined) => void;
     setIsGraphDirected: () => void;
     setIsGraphCyclic: (value: boolean) => void;
     setIsGraphNegativeCyclic: (value: boolean) => void;
@@ -61,6 +71,7 @@ const useGraphStore = create<GraphState>((set) => ({
 
     nodes: [],
     edges: [],
+    currentInfoTooltip: undefined,
     isGraphDirected: true,
     isGraphCyclic: false,
     isGraphNegativeCyclic: false,
@@ -140,6 +151,9 @@ const useGraphStore = create<GraphState>((set) => ({
             return order === "asc" ? a1 - b1 || a2 - b2 : b1 - a1 || b2 - a2;
           }),
         })),
+
+      setCurrentInfoTooltip: (tooltip: InfoTooltip | undefined) =>
+        set((state) => ({currentInfoTooltip: tooltip})),
     
       setIsGraphDirected: () =>
         set((state) => ({isGraphDirected: !state.isGraphDirected})),

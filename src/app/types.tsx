@@ -43,3 +43,10 @@ export type DistancesTableProps = {
   distances: Map<string, number>[] | undefined
   heuristics?: Map<string, number>
 }
+
+export type InfoTooltipProps = {
+  x: number
+  y: number
+  heading: string
+  textInput?: string
+}

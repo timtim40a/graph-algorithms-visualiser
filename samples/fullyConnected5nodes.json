@@ -1,0 +1,126 @@
+{
+  "nodes": [
+    {
+      "id": "n0",
+      "value": "0",
+      "x": 581,
+      "y": 252,
+      "selected": true,
+      "activeAnimation": 0
+    },
+    {
+      "id": "n1",
+      "value": "1",
+      "x": 686,
+      "y": 173,
+      "selected": false,
+      "activeAnimation": 0
+    },
+    {
+      "id": "n2",
+      "value": "2",
+      "x": 810,
+      "y": 254,
+      "selected": false,
+      "activeAnimation": 0
+    },
+    {
+      "id": "n3",
+      "value": "3",
+      "x": 630,
+      "y": 401,
+      "selected": false,
+      "activeAnimation": 0
+    },
+    {
+      "id": "n4",
+      "value": "4",
+      "x": 766,
+      "y": 406,
+      "selected": true,
+      "activeAnimation": 0
+    }
+  ],
+  "edges": [
+    {
+      "id": "en0n1",
+      "sourceID": "n0",
+      "targetID": "n1",
+      "weight": 1,
+      "directed": false,
+      "activeAnimation": 0
+    },
+    {
+      "id": "en1n2",
+      "sourceID": "n1",
+      "targetID": "n2",
+      "weight": 1,
+      "directed": false,
+      "activeAnimation": 0
+    },
+    {
+      "id": "en2n4",
+      "sourceID": "n2",
+      "targetID": "n4",
+      "weight": 1,
+      "directed": false,
+      "activeAnimation": 0
+    },
+    {
+      "id": "en3n4",
+      "sourceID": "n4",
+      "targetID": "n3",
+      "weight": 1,
+      "directed": false,
+      "activeAnimation": 0
+    },
+    {
+      "id": "en0n3",
+      "sourceID": "n3",
+      "targetID": "n0",
+      "weight": 1,
+      "directed": false,
+      "activeAnimation": 0
+    },
+    {
+      "id": "en0n2",
+      "sourceID": "n0",
+      "targetID": "n2",
+      "weight": 1,
+      "directed": false,
+      "activeAnimation": 0
+    },
+    {
+      "id": "en2n3",
+      "sourceID": "n2",
+      "targetID": "n3",
+      "weight": 1,
+      "directed": false,
+      "activeAnimation": 0
+    },
+    {
+      "id": "en1n3",
+      "sourceID": "n3",
+      "targetID": "n1",
+      "weight": 1,
+      "directed": false,
+      "activeAnimation": 0
+    },
+    {
+      "id": "en1n4",
+      "sourceID": "n1",
+      "targetID": "n4",
+      "weight": 1,
+      "directed": false,
+      "activeAnimation": 0
+    },
+    {
+      "id": "en0n4",
+      "sourceID": "n4",
+      "targetID": "n0",
+      "weight": 1,
+      "directed": false,
+      "activeAnimation": 0
+    }
+  ]
+}
