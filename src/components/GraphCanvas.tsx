@@ -222,12 +222,20 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
   }
 
   const getBfsPath = (startID: string) => {
+    if (!selectedNodes || selectedNodes.includes('none')) {
+      setMessage(['Select a node first', 'warn'])
+      return
+    }
     setCurrentAlgorithm('breadth-first-search')
     setMessage(['Breadth-First Search algorithm is now running...', 'log'])
     return bfs(startID, adjList)
   }
 
   const getDfsPath = (startID: string) => {
+    if (!selectedNodes || selectedNodes.includes('none')) {
+      setMessage(['Select a node first', 'warn'])
+      return
+    }
     setCurrentAlgorithm('depth-first-search')
     setMessage(['Depth-First Search algorithm is now running...', 'log'])
     return dfs(startID, adjList)
@@ -270,12 +278,11 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
   }
 
   const getDijPath = (sourceID: string) => {
+    if (!selectedNodes || selectedNodes.includes('none')) {
+      setMessage(['Select a node first', 'warn'])
+      return
+    }
     setCurrentAlgorithm('dijkstra')
-    // if (sourceID === targetID) {
-    //   console.warn('Dijkstra algorithm requires two nodes selected.')
-    //   setMessage(['Dijkstra algorithm requires two nodes selected.', 'error'])
-    //   return null
-    // } else
     if (edges.some((edge) => edge.weight < 0)) {
       console.warn(
         'The graph contains negative weights. Dijkstra algorithm may return unexpected paths.'
@@ -337,7 +344,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
     }
   }
 
-  const startAnimation = (newSearchOrder: SearchOrder | null) => {
+  const startAnimation = (newSearchOrder: SearchOrder | null | undefined) => {
     if (!newSearchOrder) return
     setSearchOrder(newSearchOrder)
     stopAnimation() // Reset first
@@ -415,6 +422,11 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
     setAdjInput(event.target.value)
   }
 
+  const clearSelection = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation()
+    setSelectedNodes([])
+  }
+
   const heuristicsEdges = (): ReactNode => {
     const edges: ReactNode[] = []
 
@@ -444,6 +456,10 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
     setSelectedNodes(['none'])
     stopAnimation()
     nodes.length > 2 ? getBellmanFord(nodes[0].id, nodes[1].id) : null
+    setMessage([
+      isEditModeOn ? 'You are now in Edit Mode' : 'You are now in View Mode',
+      'log',
+    ])
   }, [isEditModeOn])
 
   useEffect(() => {
@@ -558,7 +574,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
         onKeyDown={handleHotkey}
       >
         {nodes.length === 0 ? (
-          <label id="info">
+          <label id="info" className="hint">
             {' '}
             {isEditModeOn
               ? 'Click anywhere to place a node'
@@ -566,18 +582,19 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
           </label>
         ) : null}
         <div className="left-sidebar">
-          <button
-            onClick={toggleEditMode}
-            className={isEditModeOn ? 'button pressed' : 'button not-pressed'}
-          >
+          <button onClick={toggleEditMode} className={'button not-pressed'}>
             {isEditModeOn ? (
               <img
                 src="/editmode-return.png"
                 alt="Back to View Mode"
-                className="icon"
+                className="icon view-mode"
               />
             ) : (
-              <img src="/editmode.png" alt="Enter Edit Mode" className="icon" />
+              <img
+                src="/editmode.png"
+                alt="Enter Edit Mode"
+                className="icon edit-mode"
+              />
             )}
           </button>
           <br></br>
@@ -589,7 +606,11 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
                   isCreatingEdge ? 'button pressed' : 'button not-pressed'
                 }
               >
-                <img src="/edges.png" alt="Toggle Edges" className="icon" />
+                <img
+                  src="/edges.png"
+                  alt="Toggle Edges"
+                  className="icon toggle-edges"
+                />
               </button>
               <br></br>
               <button
@@ -598,13 +619,23 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
                   isDeletingNode ? 'button pressed' : 'button not-pressed'
                 }
               >
-                <img src="/nodes.png" alt="Delete Nodes" className="icon" />
+                <img
+                  src="/nodes.png"
+                  alt="Delete Nodes"
+                  className="icon delete-nodes"
+                />
               </button>
               <br></br>
-              <button onClick={(e) => deleteAll(e, 'nodes')}>Clear</button>
+              <button onClick={(e) => deleteAll(e, 'nodes')}>
+                <img src="/clearall.png" alt="Clear" className="icon clear" />
+              </button>
               <br></br>
               <button onClick={(e) => deleteAll(e, 'edges')}>
-                Clear Edges
+                <img
+                  src="/clearedges.png"
+                  alt="Clear Edges"
+                  className="icon clear-edges"
+                />
               </button>
               <br></br>
               <button
@@ -614,7 +645,19 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
                 }
               >
                 {' '}
-                {isGraphDirected ? 'Directed' : 'Undirected'}{' '}
+                {isGraphDirected ? (
+                  <img
+                    src="/directed.png"
+                    alt="to Directed"
+                    className="icon directed"
+                  />
+                ) : (
+                  <img
+                    src="/undirected.png"
+                    alt="to Undirected"
+                    className="icon undirected"
+                  />
+                )}{' '}
               </button>
               <br></br>
               <button onClick={(e) => tenXtenGrid(e)}>Create 10x10 grid</button>
@@ -713,13 +756,20 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
               <br></br>
             </>
           )}
-          <label>
-            {`Currently selected nodes: ${
+          <label className="currently-selected-nodes">
+            {`Selected nodes: ${
               selectedNodes.length === 1
                 ? selectedNodes[0]
                 : selectedNodes.join(' ')
             }`}
           </label>
+          <br></br>
+          <button
+            className="algorithm-button"
+            onClick={(e) => clearSelection(e)}
+          >
+            Clear Selection
+          </button>
         </div>
         <svg
           className="edge-layer"
@@ -763,7 +813,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
             ></input>
             <br></br>
           </div>
-          <div id="adj-list">
+          <div id="adj-list" className="adj-list">
             {!isAnimationOn ? (
               edges
                 .filter((edge) => edge.id.includes(adjInput))

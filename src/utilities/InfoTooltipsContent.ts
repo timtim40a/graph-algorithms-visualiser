@@ -4,6 +4,8 @@ infoTooltipsContents.set("canvas",["Canvas", "The main working area of the visua
 
 infoTooltipsContents.set("graph-node", ["Node, aka: Vertex, Point, Junction","One of the points on which the graph is defined and which may be connected by graph edges."])
 
+infoTooltipsContents.set("graph-node selected", ["Node, aka: Vertex, Point, Junction","One of the points on which the graph is defined and which may be connected by graph edges. This node is currently selected."])
+
 infoTooltipsContents.set("adj-element-label", ["Edge","This labels represent the edges of your graph: their names correspond to the nodes they are connecting. You can change their weight, direction, or delete them using buttons to the right."])
 
 infoTooltipsContents.set("adj-element-input", ["Weight input","Please use this field to specify the weight for the corresponding edge, then press ENTER, or the burron to the right."])
@@ -44,6 +46,44 @@ infoTooltipsContents.set("algorithm-button a-star", ["Run A* Algorithm"," Input:
 
 infoTooltipsContents.set("algorithm-button bellman-ford", ["Run Bellman-Ford Algorithm"," Input: source node selected.\n\nBellman-Ford algorithm finds the shortest path from a source node to all other nodes in a weighted graph, even if the graph contains negative edge weights. It repeatedly relaxes all edges, updating the shortest known distance. It is slower than Dijkstra's algorithm, but it can work on negative weights and detect negative weight cycles."])
 
+infoTooltipsContents.set("graph-node not-observed", ["Non-observed Node, aka: Vertex, Point, Junction","One of the points on which the graph is defined and which may be connected by graph edges. It has not been observed yet."])
 
+infoTooltipsContents.set("graph-node current", ["Current Node, aka: Vertex, Point, Junction","One of the points on which the graph is defined and which may be connected by graph edges. This node is currently being explored by the algorithm and it's neighbours are being taken into account."])
+
+infoTooltipsContents.set("graph-node on-frontier", ["Node on the Frontier, aka: Vertex, Point, Junction","One of the points on which the graph is defined and which may be connected by graph edges. It has been discovered as a neighbour of some node, but not explored yet."])
+
+infoTooltipsContents.set("graph-node observed", ["Explored Node, aka: Vertex, Point, Junction","One of the points on which the graph is defined and which may be connected by graph edges. This node has already been explored and will not be chosen as a current node agains"])
+
+infoTooltipsContents.set("graph-node selected not-observed", ["Non-observed Node, aka: Vertex, Point, Junction","One of the points on which the graph is defined and which may be connected by graph edges. It has not been observed yet."])
+
+infoTooltipsContents.set("graph-node selected current", ["Current Node, aka: Vertex, Point, Junction","One of the points on which the graph is defined and which may be connected by graph edges. This node is currently being explored by the algorithm and it's neighbours are being taken into account."])
+
+infoTooltipsContents.set("graph-node selected on-frontier", ["Node on the Frontier, aka: Vertex, Point, Junction","One of the points on which the graph is defined and which may be connected by graph edges. It has been discovered as a neighbour of some node, but not explored yet."])
+
+infoTooltipsContents.set("graph-node selected observed", ["Explored Node, aka: Vertex, Point, Junction","One of the points on which the graph is defined and which may be connected by graph edges. This node has already been explored and will not be chosen as a current node agains"])
+
+infoTooltipsContents.set("code-block",["Pseudocode","The pseudocode that explains how the algorithm that is currently running works. Take a close look at it and try to create some parallels between it and what happens on the screen during the animation."])
+
+infoTooltipsContents.set("icon view-mode",["Back to View Mode","Go to view mode, where you can use different algorithms on the graph that you have created."])
+
+infoTooltipsContents.set("icon edit-mode",["Go to Edit Mode","Go to edit mode, where you can create or alter the graph that you have already created."])
+
+infoTooltipsContents.set("icon toggle-edges",["Toggle Edge Creation","Use this button to switch the behaviour of your node-clicks. This option will allow to connect the nodes with edges."])
+
+infoTooltipsContents.set("icon delete-nodes",["Toggle Node Deletion","Use this button to switch the behaviour of your node-clicks. This option will allow to delete the nodes by clicking on them."])
+
+infoTooltipsContents.set("icon clear",["Clear All","Deletes the current graph entirely. Be careful."])
+
+infoTooltipsContents.set("icon clear-edges",["Clear Edges","Deletes all the edges betwen the nodes so that you can sart from scratch."])
+
+infoTooltipsContents.set("icon directed",["Directed","Switch the graph to directed. Edges will now lead from the *first* node that you have chosen to the *second* one. The algorithms will be able to traverse it only in the direction specified."])
+
+infoTooltipsContents.set("icon undirected",["Undirected","Switch the graph to undirected. All edges will be bidirectional, and the algorithms will be able tot raverse them in both directions."])
+
+infoTooltipsContents.set("info-tooltip", ["Info Tooltip","This is an info tooltip. Usually you will see some information here about the object that you clicked on."])
+
+infoTooltipsContents.set("adj-list", ["Right Sidebar", "This is the area where you can see the list of edges currently on the canvas, the pseudocode for the running algorithm, animation controls (in View mode), edge editing options and edge weight randomizer (in Edit mode)"])
+
+infoTooltipsContents.set("left-sidebar", ["Left Sidebar", "This is the area where you can see the list of algorithms which you can run on the graph (in View mode) and various editing tools (in Edit mode)"])
 
 export default infoTooltipsContents

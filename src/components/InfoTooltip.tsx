@@ -10,7 +10,10 @@ const InfoTooltip: React.FC<InfoTooltipProps> = ({
 }) => {
   const textDefaultContent: [string, string] = infoTooltipsContents.get(
     heading
-  ) ?? [heading, 'ERROR']
+  ) ?? [
+    heading,
+    'this element is not decribed yet, click on other elements on the screen',
+  ]
   const textToDisplay = textInput
     ? textInput + textDefaultContent[1]
     : textDefaultContent[1]

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { KeyboardEvent, useEffect, useRef, useState } from 'react'
 import '../styles/Header.css'
 import GraphImportExport from './GraphImportExport'
 import useGraphStore from '../store/useGraphStore'
@@ -30,6 +30,34 @@ const useClickListener = (
   }, [callback, isEnabled])
 }
 
+const useKeyListener = (callback: (iKeyPressed: boolean) => void) => {
+  const callbackRef = useRef(callback)
+
+  useEffect(() => {
+    callbackRef.current = callback
+  }, [callback])
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() === 'i') {
+        callbackRef.current(true)
+      }
+    }
+
+    document.addEventListener(
+      'keydown',
+      handleKeyDown as unknown as EventListener
+    )
+
+    return () => {
+      document.removeEventListener(
+        'keydown',
+        handleKeyDown as unknown as EventListener
+      )
+    }
+  }, [])
+}
+
 const Header: React.FC<HeaderProps> = ({ title }) => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   const { currentInfoTooltip, setCurrentInfoTooltip } = useGraphStore()
@@ -48,17 +76,27 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
     })
   }, isInfoOn)
 
-  const onInfoClick = () => {
-    setIsInfoOn(true)
-  }
+  useKeyListener((iKeyPressed) => {
+    if (iKeyPressed) {
+      setIsInfoOn((prev) => {
+        const newState = !prev
+        if (!newState) {
+          setCurrentInfoTooltip(undefined) // Clear tooltip when turning off
+        }
+        return newState
+      })
+    }
+  })
 
-  const onEscapeInfoClick = () => {
-    setIsInfoOn(false)
-    setCurrentInfoTooltip(undefined)
+  const onInfoClick = () => {
+    setIsInfoOn(!isInfoOn)
   }
 
   useEffect(() => {
-    if (!isInfoOn) return
+    if (!isInfoOn) {
+      setCurrentInfoTooltip(undefined)
+      return
+    }
 
     const stopClickPropagation = (event: MouseEvent) => {
       const leaveButton = document.getElementById('leave-info-mode')
@@ -138,10 +176,11 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
           {isInfoOn ? (
             <li>
               <button className="nav-link">
-                Select an item to get information about it
+                Select an item to get information about it (You can as well
+                press 'I')
               </button>
               <button
-                onClick={onEscapeInfoClick}
+                onClick={onInfoClick}
                 id="leave-info-mode"
                 className="nav-link"
               >

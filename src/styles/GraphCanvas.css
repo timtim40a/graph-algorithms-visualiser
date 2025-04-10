@@ -13,6 +13,8 @@
 
 #main {
     --node-size: 30px;
+    --pressed-button-colour: #8f8f9d;
+    --not-pressed-button-colour: lightgray;
 }
 
 .right-sidebar {
@@ -28,7 +30,7 @@
 
 .left-sidebar {
     position: absolute;
-    left: 0px;
+    left: 5px;
 }
 
 .bottom-bar {
@@ -49,11 +51,14 @@
 }
 
 input, 
-button {
+button,
+.currently-selected-nodes {
     margin-bottom: 6px;
     margin-right: 6px;
     padding: 6px;
     font-size: small;
+    border: solid 1px #8f8f9d;
+    border-radius: 4px;
 }
 
 label,
@@ -79,8 +84,8 @@ p {
 }
 
 .icon {
-    width: 20px;
-    height: 20px;
+    width: 27px;
+    height: 27px;
     object-fit: contain;
 }
 
@@ -97,4 +102,16 @@ p {
 
 .algorithm-button {
     width: inherit;
+}
+
+.pressed {
+    background-color: var(--pressed-button-colour);
+}
+
+.not-pressed {
+    background-color: var(--not-pressed-button-colour);
+}
+
+.currently-selected-nodes {
+    padding-bottom: 32px;
 }
