@@ -60,7 +60,12 @@ const useKeyListener = (callback: (iKeyPressed: boolean) => void) => {
 
 const Header: React.FC<HeaderProps> = ({ title }) => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
-  const { currentInfoTooltip, setCurrentInfoTooltip } = useGraphStore()
+  const {
+    currentInfoTooltip,
+    setCurrentInfoTooltip,
+    showWelcome,
+    setShowWelcome,
+  } = useGraphStore()
   const [isInfoOn, setIsInfoOn] = useState<boolean>(false)
 
   const toggleDropdown = (menu: string) => {
@@ -90,6 +95,10 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
 
   const onInfoClick = () => {
     setIsInfoOn(!isInfoOn)
+  }
+
+  const handleOpenWelcome = () => {
+    setShowWelcome(true)
   }
 
   useEffect(() => {
@@ -169,6 +178,9 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
                 </li>
                 <li>
                   <button onClick={onInfoClick}>Info...</button>
+                </li>
+                <li>
+                  <button onClick={handleOpenWelcome}>Welcome Screen</button>
                 </li>
               </ul>
             )}

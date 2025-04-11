@@ -1,0 +1,48 @@
+.welcome-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    /* dim backdrop */
+    backdrop-filter: blur(2px);
+    /* adds subtle blur */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    /* super high to stay on top */
+    opacity: 1;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.welcome-content {
+    text-align: left;
+    word-wrap: normal;
+    max-width: 50vw;
+    padding: 2rem;
+    background: #ccc;
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+    transform: scale(1);
+    transition: transform 0.3s ease;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.welcome-screen.fade-out {
+    opacity: 0;
+    transform: scale(0.98);
+    pointer-events: none;
+}
+
+.welcome-content button {
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    border: none;
+    background: #4caf50;
+    color: white;
+    cursor: pointer;
+    border-radius: 8px;
+}

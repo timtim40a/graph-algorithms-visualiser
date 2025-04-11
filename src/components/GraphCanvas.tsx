@@ -32,6 +32,7 @@ import pseudocodes from '@/utilities/Pseudocodes'
 import InfoTooltip from './InfoTooltip'
 import { randomInt } from 'crypto'
 import EdgeWeightRandomizer from './EdgeWeightRandomizer'
+import WelcomeScreen from './WelcomeScreen'
 
 type GraphCanvasProps = {
   canvasHeight?: number
@@ -80,6 +81,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
     isGraphCyclic,
     isGraphNegativeCyclic,
     isAnimationOn,
+    showWelcome,
     addNode,
     removeNode,
     alterNode,
@@ -95,6 +97,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
     setIsGraphCyclic,
     setIsGraphNegativeCyclic,
     setIsAnimationOn,
+    setShowWelcome,
   } = useGraphStore()
   const [selectedNodes, setSelectedNodes] = useState<string[]>([])
   const [isCreatingEdge, setIsCreatingEdge] = useState<boolean>(false)
@@ -141,6 +144,10 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
   const toggleDirectedGraph = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation()
     setIsGraphDirected()
+  }
+
+  const handleCloseWelcome = () => {
+    setShowWelcome(false)
   }
 
   const handleNodeClick = (id: string) => {
@@ -211,6 +218,12 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
     addEdge(id, sourceID, targetID, 1, directed, false)
   }
 
+  const maxWeight = (): number => {
+    const weights: number[] = []
+    edges.map((edge) => weights.push(edge.weight))
+    return Math.max(...weights)
+  }
+
   const handleHotkey = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'e') {
       setIsEditModeOn((prev) => !prev)
@@ -222,7 +235,10 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
   }
 
   const getBfsPath = (startID: string) => {
-    if (!selectedNodes || selectedNodes.includes('none')) {
+    if (
+      !selectedNodes ||
+      (selectedNodes.includes('none') && selectedNodes.length === 1)
+    ) {
       setMessage(['Select a node first', 'warn'])
       return
     }
@@ -232,7 +248,10 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
   }
 
   const getDfsPath = (startID: string) => {
-    if (!selectedNodes || selectedNodes.includes('none')) {
+    if (
+      !selectedNodes ||
+      (selectedNodes.includes('none') && selectedNodes.length === 1)
+    ) {
       setMessage(['Select a node first', 'warn'])
       return
     }
@@ -278,7 +297,10 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
   }
 
   const getDijPath = (sourceID: string) => {
-    if (!selectedNodes || selectedNodes.includes('none')) {
+    if (
+      !selectedNodes ||
+      (selectedNodes.includes('none') && selectedNodes.length === 1)
+    ) {
       setMessage(['Select a node first', 'warn'])
       return
     }
@@ -317,7 +339,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
       'log',
     ])
     setCurrentAlgorithm('a-star')
-    return aStarWithEuclidean(sourceID, targetID, nodes, adjList)
+    return aStarWithEuclidean(sourceID, targetID, nodes, maxWeight(), adjList)
   }
 
   const getBellmanFord = (sourceID: string, targetID: string) => {
@@ -531,40 +553,41 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
     console.log(pseudocodes.get(currentAlgorithm))
   }, [currentAlgorithm])
 
+  useEffect(() => {
+    const hasVisited = localStorage.getItem('hasVisited')
+    if (!hasVisited) {
+      setShowWelcome(true)
+      localStorage.setItem('hasVisited', 'true')
+    }
+  }, [])
+
   const tenXtenGrid = (e: any) => {
     e.stopPropagation()
     for (let i = 0; i < 10; i += 1) {
       for (let j = 0; j < 10; j += 1) {
         const id = i > 0 ? 'n' + i + j : 'n' + j
-        const x = i * 70 + 400
-        const y = j * 60 + 30
+        const x = i * 60 + 400
+        const y = j * 60 + 60
         addNode(id, id.slice(1), x, y, () => handleNodeClick(id))
       }
     }
     setNodeCounter(100)
     for (let i = 0; i < 100; i += 1) {
       const sourceID = 'n' + i
-      if (i > 9) {
-        const targetID = 'n' + (i - 10)
-        addEdge('e' + sourceID + targetID, sourceID, targetID, 1, false, false)
-      }
-      /*if (i < 90) {
+      if (i < 90) {
         const targetID = 'n' + (i + 10)
         addEdge('e' + sourceID + targetID, sourceID, targetID, 1, false, false)
-      }*/
-      if (i % 10 > 1) {
-        const targetID = 'n' + (i - 1)
-        addEdge('e' + sourceID + targetID, sourceID, targetID, 1, false, false)
       }
-      /*if (i % 10 < 9) {
+      if (i % 10 !== 9) {
         const targetID = 'n' + (i + 1)
         addEdge('e' + sourceID + targetID, sourceID, targetID, 1, false, false)
-      }*/
+      }
     }
   }
 
   return (
     <>
+      {showWelcome && <WelcomeScreen onClose={handleCloseWelcome} />}
       <div
         id="main"
         className="canvas"

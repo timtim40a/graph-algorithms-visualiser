@@ -36,120 +36,126 @@ const GraphEdge: React.FC<GraphEdgeProps> = ({
 
   return (
     <>
-      {sourceID != targetID ? (
-        <>
-          <defs>
-            <marker
-              id="arrow-discovered"
-              viewBox="0 0 10 10"
-              refX="5"
-              refY="5"
-              markerWidth="6"
-              markerHeight="6"
-              orient="auto-start-reverse"
+      {
+        sourceID != targetID ? (
+          <>
+            <defs>
+              <marker
+                id="arrow-discovered"
+                viewBox="0 0 10 10"
+                refX="5"
+                refY="5"
+                markerWidth="6"
+                markerHeight="6"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 0 L 10 5 L 0 10 z" />
+                <animate
+                  attributeName="fill"
+                  from="rgb(0,0,0)"
+                  to="rgb(200,150,20)"
+                  begin="0s"
+                  dur="9s"
+                  fill="freeze"
+                />
+              </marker>
+              <marker
+                id="arrow-path"
+                viewBox="0 0 10 10"
+                refX="5"
+                refY="5"
+                markerWidth="6"
+                markerHeight="6"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 0 L 10 5 L 0 10 z" />
+                <animate
+                  attributeName="fill"
+                  from="rgb(0,0,0)"
+                  to="rgb(0,150,0)"
+                  begin="0s"
+                  dur="9s"
+                  fill="freeze"
+                />
+              </marker>
+              <marker
+                id="arrow"
+                viewBox="0 0 10 10"
+                refX="5"
+                refY="5"
+                markerWidth="6"
+                markerHeight="6"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 0 L 10 5 L 0 10 z" />
+              </marker>
+            </defs>
+            <line
+              id={isGraphDirected ? 'e' + sourceID + targetID : id}
+              /*className={activeAnimation === 4 ? "heuristics-edge" : "edge"}*/
+              x1={sourceX}
+              y1={sourceY}
+              x2={isGraphDirected ? edgeEndX : targetX}
+              y2={isGraphDirected ? edgeEndY : targetY}
+              strokeWidth="3px"
+              stroke={
+                activeAnimation === 4 ? 'rgb(100, 149, 237)' : 'rgb(0,0,0)'
+              }
+              strokeDasharray={activeAnimation === 4 ? '4 1' : undefined}
+              markerEnd={
+                isGraphDirected
+                  ? activeAnimation === 1
+                    ? 'url(#arrow-discovered)'
+                    : activeAnimation === 2
+                    ? 'url(#arrow-path)'
+                    : 'url(#arrow)'
+                  : undefined
+              }
             >
-              <path d="M 0 0 L 10 5 L 0 10 z" />
-              <animate
-                attributeName="fill"
-                from="rgb(0,0,0)"
-                to="rgb(200,150,20)"
-                begin="0s"
-                dur="9s"
-                fill="freeze"
-              />
-            </marker>
-            <marker
-              id="arrow-path"
-              viewBox="0 0 10 10"
-              refX="5"
-              refY="5"
-              markerWidth="6"
-              markerHeight="6"
-              orient="auto-start-reverse"
-            >
-              <path d="M 0 0 L 10 5 L 0 10 z" />
-              <animate
-                attributeName="fill"
-                from="rgb(0,0,0)"
-                to="rgb(0,150,0)"
-                begin="0s"
-                dur="9s"
-                fill="freeze"
-              />
-            </marker>
-            <marker
-              id="arrow"
-              viewBox="0 0 10 10"
-              refX="5"
-              refY="5"
-              markerWidth="6"
-              markerHeight="6"
-              orient="auto-start-reverse"
-            >
-              <path d="M 0 0 L 10 5 L 0 10 z" />
-            </marker>
-          </defs>
-          <line
-            id={isGraphDirected ? 'e' + sourceID + targetID : id}
-            /*className={activeAnimation === 4 ? "heuristics-edge" : "edge"}*/
-            x1={sourceX}
-            y1={sourceY}
-            x2={isGraphDirected ? edgeEndX : targetX}
-            y2={isGraphDirected ? edgeEndY : targetY}
-            strokeWidth="3px"
-            stroke={activeAnimation === 4 ? 'rgb(100, 149, 237)' : 'rgb(0,0,0)'}
-            strokeDasharray={activeAnimation === 4 ? '4 1' : undefined}
-            markerEnd={
-              isGraphDirected
-                ? activeAnimation === 1
-                  ? 'url(#arrow-discovered)'
-                  : activeAnimation === 2
-                  ? 'url(#arrow-path)'
-                  : 'url(#arrow)'
-                : undefined
-            }
-          >
-            {activeAnimation === 1 ? (
-              <animate
-                attributeName="stroke"
-                from="rgb(0,0,0)"
-                to="rgb(200,150,20)"
-                begin="0s"
-                dur="9s"
-                fill="freeze"
-              />
-            ) : activeAnimation === 2 ? (
-              <animate
-                attributeName="stroke"
-                from="rgb(0,0,0)"
-                to="rgb(0,128,0)"
-                begin="0s"
-                dur="9s"
-                fill="freeze"
-              />
-            ) : activeAnimation === 3 ? (
-              <animate
-                attributeName="stroke"
-                from="rgb(0,0,0)"
-                to="rgb(200,200,200)"
-                begin="0s"
-                dur="9s"
-                fill="freeze"
-              />
+              {activeAnimation === 1 ? (
+                <animate
+                  attributeName="stroke"
+                  from="rgb(0,0,0)"
+                  to="rgb(200,150,20)"
+                  begin="0s"
+                  dur="9s"
+                  fill="freeze"
+                />
+              ) : activeAnimation === 2 ? (
+                <animate
+                  attributeName="stroke"
+                  from="rgb(0,0,0)"
+                  to="rgb(0,128,0)"
+                  begin="0s"
+                  dur="9s"
+                  fill="freeze"
+                />
+              ) : activeAnimation === 3 ? (
+                <animate
+                  attributeName="stroke"
+                  from="rgb(0,0,0)"
+                  to="rgb(200,200,200)"
+                  begin="0s"
+                  dur="9s"
+                  fill="freeze"
+                />
+              ) : null}
+            </line>
+            {activeAnimation !== 2 ? (
+              <rect
+                x={(sourceX + targetX) / 2 - 5}
+                y={(sourceY + targetY) / 2 - 5}
+                width={15}
+                height={15}
+                fill="white"
+              ></rect>
             ) : null}
-          </line>
-          <rect
-            x={(sourceX + targetX) / 2 - 5}
-            y={(sourceY + targetY) / 2 - 5}
-            width={15}
-            height={15}
-            fill="white"
-          ></rect>
-          <text x={(sourceX + targetX) / 2} y={(sourceY + targetY) / 2}>
-            {weight}
-          </text>
-        </>
-      ) : (
+            <text x={(sourceX + targetX) / 2} y={(sourceY + targetY) / 2}>
+              {weight}
+            </text>
+          </>
+        ) : null
+        /*(
         <circle
           id={id}
           cx={sourceX + 20}
@@ -159,7 +165,8 @@ const GraphEdge: React.FC<GraphEdgeProps> = ({
           stroke="black"
           strokeWidth="3px"
         ></circle>
-      )}
+      )*/
+      }
     </>
   )
 }

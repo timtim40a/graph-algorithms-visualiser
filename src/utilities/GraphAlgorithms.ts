@@ -231,6 +231,7 @@ export const aStarWithEuclidean = (
   startID: string,
   targetID: string,
   nodes: GraphNodeProps[],
+  maxWeight: number,
   adjacencyList: Map<string, { id: string; weight: number }[]>
 ): SearchOrder => {
   console.log("A* started...")
@@ -241,13 +242,16 @@ export const aStarWithEuclidean = (
   const edges: Map<[string, string],number>[] = [new Map()];
   const animationNodes: Map<string, number>[] = [new Map()];
   const nodeMap = new Map(nodes.map((node) => [node.id, node]));
+
   let i = 0;
-  adjacencyList.forEach((_, node) => {
+  adjacencyList.forEach((list, node) => {
     distances[i].set(node, Infinity);
     heuristics.set(node, euclideanDistance(nodeMap.get(node)!, nodeMap.get(targetID)!))
     animationNodes[i].set(node, 1)
-    previous.set(node, null);
+    previous.set(node, null)
   });
+
+  const maxEuD = Math.max(...Array.from(heuristics.values()))
 
   distances[i].set(startID, 0);
   priorityQueue.push({
@@ -282,9 +286,16 @@ export const aStarWithEuclidean = (
           id: neighbour.id,
           fScore:
             tentativeGScore + euD!,
+            
+            //tentativeGScore/maxWeight + euD!/maxEuD
+            // OR
+            //tentativeGScore*maxEuD + euD!*maxWeight
+            // TO NORMALISE
         });
       }
     }
+    console.log(`maxEud: ${maxEuD}`)
+    console.log(`maxDist: ${maxWeight}`)
   }
 
   // Reconstruct path as nodes and edges
