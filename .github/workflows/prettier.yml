@@ -11,3 +11,4 @@ jobs:
             - uses: creyD/prettier_action@v4.6
               with:
                   dry: true
+                  prettier_options: --config gav-v2/.prettierrc.json --check "gav-v2/**/*.{ts,tsx,css,json,yml}"
