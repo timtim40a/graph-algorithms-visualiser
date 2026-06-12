@@ -82,6 +82,11 @@ export class GraphInteractionController {
         }
 
         if (tool === "addNode") {
+            const hitNode = findHitNode();
+            if (hitNode) {
+                this.store.setSelection({ nodeIds: [hitNode.id], edgeIds: [] });
+                return;
+            }
             const id = crypto.randomUUID();
             this.store.setGraph({
                 ...graph,
@@ -194,9 +199,14 @@ export class GraphInteractionController {
         const settings = this.store.getSettings();
 
         const hitNode = graph.nodes.find((n) =>
-            hitTestNode(n, world.x, world.y, getNodeRadius(n.id, graph, settings))
+            hitTestNode(
+                n,
+                world.x,
+                world.y,
+                getNodeRadius(n.id, graph, settings)
+            )
         );
-        if (hitNode) {
+        if (hitNode && this.store.getSettings().renamableNodes) {
             this.onStartRename?.(hitNode.id, e.offsetX, e.offsetY);
         }
     }

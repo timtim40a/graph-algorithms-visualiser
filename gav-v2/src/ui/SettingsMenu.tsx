@@ -52,6 +52,18 @@ export function SettingsMenu() {
                         />
                         Draggable nodes
                     </label>
+                    <label className={styles.checkboxRow}>
+                        <input
+                            type="checkbox"
+                            checked={settings.renamableNodes}
+                            onChange={(e) =>
+                                setSettings({
+                                    renamableNodes: e.target.checked,
+                                })
+                            }
+                        />
+                        Renamable nodes
+                    </label>
                 </div>
             )}
         </div>

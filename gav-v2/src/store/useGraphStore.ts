@@ -6,6 +6,7 @@ export type Tool = "select" | "addNode" | "addEdge" | "delete";
 export interface Settings {
     variableNodeSizes: boolean;
     draggableNodes: boolean;
+    renamableNodes: boolean;
 }
 
 interface GraphStore {
@@ -26,6 +27,7 @@ const EMPTY_SELECTION: SelectionState = { nodeIds: [], edgeIds: [] };
 const DEFAULT_SETTINGS: Settings = {
     variableNodeSizes: false,
     draggableNodes: true,
+    renamableNodes: true,
 };
 
 export const useGraphStore = create<GraphStore>((set) => ({
@@ -34,7 +36,7 @@ export const useGraphStore = create<GraphStore>((set) => ({
     selection: EMPTY_SELECTION,
     settings: DEFAULT_SETTINGS,
 
-    setTool: (tool) => set({ tool }),
+    setTool: (tool) => set({ tool, selection: EMPTY_SELECTION }),
     setGraph: (graph) => set({ graph }),
     setSelection: (selection) => set({ selection }),
     clearSelection: () => set({ selection: EMPTY_SELECTION }),

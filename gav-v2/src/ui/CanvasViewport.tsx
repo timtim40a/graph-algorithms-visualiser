@@ -110,7 +110,15 @@ export function CanvasViewport() {
         ro.observe(canvas);
         resize();
 
-        return () => ro.disconnect();
+        // React registers onWheel as passive; attach directly so preventDefault works
+        const onWheel = (e: WheelEvent) =>
+            controllerRef.current?.onWheel(e);
+        canvas.addEventListener("wheel", onWheel, { passive: false });
+
+        return () => {
+            ro.disconnect();
+            canvas.removeEventListener("wheel", onWheel);
+        };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -135,7 +143,6 @@ export function CanvasViewport() {
                     controllerRef.current?.onPointerMove(e.nativeEvent)
                 }
                 onPointerUp={() => controllerRef.current?.onPointerUp()}
-                onWheel={(e) => controllerRef.current?.onWheel(e.nativeEvent)}
                 onDoubleClick={(e) =>
                     controllerRef.current?.onDoubleClick(e.nativeEvent)
                 }
