@@ -65,14 +65,25 @@ export function CanvasViewport() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
-    useEffect(() => { redraw() }, [redraw])
+    useEffect(() => {
+        redraw()
+    }, [redraw])
 
     return (
         <canvas
             ref={canvasRef}
-            style={{ display: 'block', width: '100%', height: '100%', touchAction: 'none' }}
-            onPointerDown={(e) => controllerRef.current?.onPointerDown(e.nativeEvent)}
-            onPointerMove={(e) => controllerRef.current?.onPointerMove(e.nativeEvent)}
+            style={{
+                display: 'block',
+                width: '100%',
+                height: '100%',
+                touchAction: 'none',
+            }}
+            onPointerDown={(e) =>
+                controllerRef.current?.onPointerDown(e.nativeEvent)
+            }
+            onPointerMove={(e) =>
+                controllerRef.current?.onPointerMove(e.nativeEvent)
+            }
             onPointerUp={() => controllerRef.current?.onPointerUp()}
             onWheel={(e) => controllerRef.current?.onWheel(e.nativeEvent)}
         />
