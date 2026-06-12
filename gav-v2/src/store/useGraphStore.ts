@@ -23,7 +23,10 @@ interface GraphStore {
 
 const EMPTY_GRAPH: GraphData = { nodes: [], edges: [] };
 const EMPTY_SELECTION: SelectionState = { nodeIds: [], edgeIds: [] };
-const DEFAULT_SETTINGS: Settings = { variableNodeSizes: false, draggableNodes: true };
+const DEFAULT_SETTINGS: Settings = {
+    variableNodeSizes: false,
+    draggableNodes: true,
+};
 
 export const useGraphStore = create<GraphStore>((set) => ({
     tool: "select",
@@ -35,5 +38,6 @@ export const useGraphStore = create<GraphStore>((set) => ({
     setGraph: (graph) => set({ graph }),
     setSelection: (selection) => set({ selection }),
     clearSelection: () => set({ selection: EMPTY_SELECTION }),
-    setSettings: (s) => set((state) => ({ settings: { ...state.settings, ...s } })),
+    setSettings: (s) =>
+        set((state) => ({ settings: { ...state.settings, ...s } })),
 }));
