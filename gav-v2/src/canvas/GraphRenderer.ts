@@ -26,7 +26,8 @@ export class GraphRenderer {
         settings: Settings,
         viewport: ViewportController,
         width: number,
-        height: number
+        height: number,
+        renamingNodeId?: string
     ): void {
         const { ctx } = this;
 
@@ -52,7 +53,12 @@ export class GraphRenderer {
         // 4. Draw nodes (+ selection highlight underneath)
         for (const node of graph.nodes) {
             const r = getNodeRadius(node.id, graph, settings);
-            this.drawNode(node, selection.nodeIds.includes(node.id), r);
+            this.drawNode(
+                node,
+                selection.nodeIds.includes(node.id),
+                r,
+                node.id === renamingNodeId
+            );
         }
     }
 
@@ -109,7 +115,12 @@ export class GraphRenderer {
         ctx.fill();
     }
 
-    private drawNode(node: GraphNode, selected: boolean, radius: number): void {
+    private drawNode(
+        node: GraphNode,
+        selected: boolean,
+        radius: number,
+        renaming = false
+    ): void {
         const { ctx } = this;
 
         if (selected) {
@@ -127,10 +138,12 @@ export class GraphRenderer {
         ctx.lineWidth = selected ? 2.5 : 1.5;
         ctx.stroke();
 
-        ctx.fillStyle = COLORS.label;
-        ctx.font = "12px system-ui, sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(node.label, node.x, node.y);
+        if (!renaming) {
+            ctx.fillStyle = COLORS.label;
+            ctx.font = "12px system-ui, sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(node.label, node.x, node.y);
+        }
     }
 }

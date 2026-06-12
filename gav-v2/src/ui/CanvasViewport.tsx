@@ -1,8 +1,16 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { GraphInteractionController } from "../canvas/GraphInteractionController";
 import { GraphRenderer } from "../canvas/GraphRenderer";
 import { ViewportController } from "../canvas/ViewportController";
 import { useGraphStore } from "../store/useGraphStore";
+import { RenameInput } from "./RenameInput";
+
+interface RenamingTarget {
+    nodeId: string;
+    x: number;
+    y: number;
+    initialLabel: string;
+}
 
 export function CanvasViewport() {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -10,11 +18,19 @@ export function CanvasViewport() {
     const viewportRef = useRef<ViewportController | null>(null);
     const controllerRef = useRef<GraphInteractionController | null>(null);
 
+    const [renamingTarget, setRenamingTarget] =
+        useState<RenamingTarget | null>(null);
+    // Ref keeps stableRedraw current without re-creating it
+    const renamingNodeIdRef = useRef<string | null>(null);
+    useEffect(() => {
+        renamingNodeIdRef.current = renamingTarget?.nodeId ?? null;
+    }, [renamingTarget]);
+
     const graph = useGraphStore((s) => s.graph);
     const selection = useGraphStore((s) => s.selection);
     const settings = useGraphStore((s) => s.settings);
 
-    // Reactive redraw — fires whenever graph, selection, or settings change
+    // Reactive redraw — fires whenever graph, selection, settings, or rename target change
     const redraw = useCallback(() => {
         const canvas = canvasRef.current;
         const renderer = rendererRef.current;
@@ -26,9 +42,10 @@ export function CanvasViewport() {
             settings,
             viewport,
             canvas.width,
-            canvas.height
+            canvas.height,
+            renamingTarget?.nodeId
         );
-    }, [graph, selection, settings]);
+    }, [graph, selection, settings, renamingTarget]);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -40,14 +57,21 @@ export function CanvasViewport() {
         const renderer = new GraphRenderer(ctx);
 
         // Stable redraw reads fresh Zustand state — used for imperative pan/zoom
-        // that bypass React's render cycle
         const stableRedraw = () => {
             const {
                 graph: g,
                 selection: s,
                 settings: st,
             } = useGraphStore.getState();
-            renderer.render(g, s, st, viewport, canvas.width, canvas.height);
+            renderer.render(
+                g,
+                s,
+                st,
+                viewport,
+                canvas.width,
+                canvas.height,
+                renamingNodeIdRef.current ?? undefined
+            );
         };
 
         controllerRef.current = new GraphInteractionController(
@@ -60,7 +84,19 @@ export function CanvasViewport() {
                 setGraph: useGraphStore.getState().setGraph,
                 setSelection: useGraphStore.getState().setSelection,
             },
-            stableRedraw
+            stableRedraw,
+            (nodeId, offsetX, offsetY) => {
+                const node = useGraphStore
+                    .getState()
+                    .graph.nodes.find((n) => n.id === nodeId);
+                if (!node) return;
+                setRenamingTarget({
+                    nodeId,
+                    x: offsetX,
+                    y: offsetY,
+                    initialLabel: node.label,
+                });
+            }
         );
         viewportRef.current = viewport;
         rendererRef.current = renderer;
@@ -83,22 +119,33 @@ export function CanvasViewport() {
     }, [redraw]);
 
     return (
-        <canvas
-            ref={canvasRef}
-            style={{
-                display: "block",
-                width: "100%",
-                height: "100%",
-                touchAction: "none",
-            }}
-            onPointerDown={(e) =>
-                controllerRef.current?.onPointerDown(e.nativeEvent)
-            }
-            onPointerMove={(e) =>
-                controllerRef.current?.onPointerMove(e.nativeEvent)
-            }
-            onPointerUp={() => controllerRef.current?.onPointerUp()}
-            onWheel={(e) => controllerRef.current?.onWheel(e.nativeEvent)}
-        />
+        <div style={{ position: "relative", width: "100%", height: "100%" }}>
+            <canvas
+                ref={canvasRef}
+                style={{
+                    display: "block",
+                    width: "100%",
+                    height: "100%",
+                    touchAction: "none",
+                }}
+                onPointerDown={(e) =>
+                    controllerRef.current?.onPointerDown(e.nativeEvent)
+                }
+                onPointerMove={(e) =>
+                    controllerRef.current?.onPointerMove(e.nativeEvent)
+                }
+                onPointerUp={() => controllerRef.current?.onPointerUp()}
+                onWheel={(e) => controllerRef.current?.onWheel(e.nativeEvent)}
+                onDoubleClick={(e) =>
+                    controllerRef.current?.onDoubleClick(e.nativeEvent)
+                }
+            />
+            {renamingTarget && (
+                <RenameInput
+                    {...renamingTarget}
+                    onDone={() => setRenamingTarget(null)}
+                />
+            )}
+        </div>
     );
 }

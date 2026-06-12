@@ -62,3 +62,18 @@
     cursor: pointer;
     user-select: none;
 }
+
+.renameInput {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    background: var(--color-surface);
+    border: 1px solid var(--color-accent);
+    border-radius: 4px;
+    color: var(--color-text);
+    font: 12px system-ui, sans-serif;
+    padding: 2px 6px;
+    min-width: 80px;
+    text-align: center;
+    outline: none;
+    z-index: 20;
+}

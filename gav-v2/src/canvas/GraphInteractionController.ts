@@ -21,15 +21,26 @@ export class GraphInteractionController {
     private readonly viewport: ViewportController;
     private readonly store: StoreAccess;
     private readonly redraw: () => void;
+    private readonly onStartRename?: (
+        nodeId: string,
+        offsetX: number,
+        offsetY: number
+    ) => void;
 
     constructor(
         viewport: ViewportController,
         store: StoreAccess,
-        redraw: () => void
+        redraw: () => void,
+        onStartRename?: (
+            nodeId: string,
+            offsetX: number,
+            offsetY: number
+        ) => void
     ) {
         this.viewport = viewport;
         this.store = store;
         this.redraw = redraw;
+        this.onStartRename = onStartRename;
     }
 
     onPointerDown(e: PointerEvent): void {
@@ -175,5 +186,18 @@ export class GraphInteractionController {
         const factor = e.deltaY < 0 ? 1 / ZOOM_FACTOR : ZOOM_FACTOR;
         this.viewport.zoomAt(e.offsetX, e.offsetY, factor);
         this.redraw();
+    }
+
+    onDoubleClick(e: MouseEvent): void {
+        const world = this.viewport.screenToWorld(e.offsetX, e.offsetY);
+        const graph = this.store.getGraph();
+        const settings = this.store.getSettings();
+
+        const hitNode = graph.nodes.find((n) =>
+            hitTestNode(n, world.x, world.y, getNodeRadius(n.id, graph, settings))
+        );
+        if (hitNode) {
+            this.onStartRename?.(hitNode.id, e.offsetX, e.offsetY);
+        }
     }
 }
