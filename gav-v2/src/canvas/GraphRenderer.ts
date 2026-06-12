@@ -1,5 +1,6 @@
-import type { GraphData, SelectionState } from '../types'
-import { NODE_RADIUS } from './hitTest'
+import type { GraphData, GraphNode, SelectionState } from '../types'
+import type { Settings } from '../store/useGraphStore'
+import { getNodeRadius } from '../core/graph-utils'
 import type { ViewportController } from './ViewportController'
 
 const COLORS = {
@@ -22,6 +23,7 @@ export class GraphRenderer {
     render(
         graph: GraphData,
         selection: SelectionState,
+        settings: Settings,
         viewport: ViewportController,
         width: number,
         height: number,
@@ -44,12 +46,13 @@ export class GraphRenderer {
 
         // 3. Draw edges
         for (const edge of graph.edges) {
-            this.drawEdge(edge, graph, selection)
+            this.drawEdge(edge, graph, selection, settings)
         }
 
         // 4. Draw nodes (+ selection highlight underneath)
         for (const node of graph.nodes) {
-            this.drawNode(node, selection.nodeIds.includes(node.id))
+            const r = getNodeRadius(node.id, graph, settings)
+            this.drawNode(node, selection.nodeIds.includes(node.id), r)
         }
     }
 
@@ -57,6 +60,7 @@ export class GraphRenderer {
         edge: import('../types').GraphEdge,
         graph: GraphData,
         selection: SelectionState,
+        settings: Settings,
     ): void {
         const { ctx } = this
         const src = graph.nodes.find((n) => n.id === edge.source)
@@ -72,7 +76,8 @@ export class GraphRenderer {
         ctx.stroke()
 
         if (edge.directed) {
-            this.drawArrowhead(src.x, src.y, tgt.x, tgt.y)
+            const tgtRadius = getNodeRadius(tgt.id, graph, settings)
+            this.drawArrowhead(src.x, src.y, tgt.x, tgt.y, tgtRadius)
         }
     }
 
@@ -81,11 +86,12 @@ export class GraphRenderer {
         y1: number,
         x2: number,
         y2: number,
+        nodeRadius: number,
     ): void {
         const { ctx } = this
         const angle = Math.atan2(y2 - y1, x2 - x1)
-        const tipX = x2 - Math.cos(angle) * NODE_RADIUS
-        const tipY = y2 - Math.sin(angle) * NODE_RADIUS
+        const tipX = x2 - Math.cos(angle) * nodeRadius
+        const tipY = y2 - Math.sin(angle) * nodeRadius
         const size = 10
 
         ctx.beginPath()
@@ -103,21 +109,18 @@ export class GraphRenderer {
         ctx.fill()
     }
 
-    private drawNode(
-        node: import('../types').GraphNode,
-        selected: boolean,
-    ): void {
+    private drawNode(node: GraphNode, selected: boolean, radius: number): void {
         const { ctx } = this
 
         if (selected) {
             ctx.beginPath()
-            ctx.arc(node.x, node.y, NODE_RADIUS + 5, 0, Math.PI * 2)
+            ctx.arc(node.x, node.y, radius + 5, 0, Math.PI * 2)
             ctx.fillStyle = 'rgba(163,148,252,0.25)'
             ctx.fill()
         }
 
         ctx.beginPath()
-        ctx.arc(node.x, node.y, NODE_RADIUS, 0, Math.PI * 2)
+        ctx.arc(node.x, node.y, radius, 0, Math.PI * 2)
         ctx.fillStyle = COLORS.nodeFill
         ctx.fill()
         ctx.strokeStyle = selected ? COLORS.nodeSelected : COLORS.nodeStroke

@@ -12,15 +12,16 @@ export function CanvasViewport() {
 
     const graph = useGraphStore((s) => s.graph)
     const selection = useGraphStore((s) => s.selection)
+    const settings = useGraphStore((s) => s.settings)
 
-    // Reactive redraw — fires whenever graph or selection changes via useEffect below
+    // Reactive redraw — fires whenever graph, selection, or settings change
     const redraw = useCallback(() => {
         const canvas = canvasRef.current
         const renderer = rendererRef.current
         const viewport = viewportRef.current
         if (!canvas || !renderer || !viewport) return
-        renderer.render(graph, selection, viewport, canvas.width, canvas.height)
-    }, [graph, selection])
+        renderer.render(graph, selection, settings, viewport, canvas.width, canvas.height)
+    }, [graph, selection, settings])
 
     useEffect(() => {
         const canvas = canvasRef.current
@@ -34,8 +35,8 @@ export function CanvasViewport() {
         // Stable redraw reads fresh Zustand state — used for imperative pan/zoom
         // that bypass React's render cycle
         const stableRedraw = () => {
-            const { graph: g, selection: s } = useGraphStore.getState()
-            renderer.render(g, s, viewport, canvas.width, canvas.height)
+            const { graph: g, selection: s, settings: st } = useGraphStore.getState()
+            renderer.render(g, s, st, viewport, canvas.width, canvas.height)
         }
 
         controllerRef.current = new GraphInteractionController(
@@ -44,6 +45,7 @@ export function CanvasViewport() {
                 getGraph: () => useGraphStore.getState().graph,
                 getSelection: () => useGraphStore.getState().selection,
                 getTool: () => useGraphStore.getState().tool,
+                getSettings: () => useGraphStore.getState().settings,
                 setGraph: useGraphStore.getState().setGraph,
                 setSelection: useGraphStore.getState().setSelection,
             },

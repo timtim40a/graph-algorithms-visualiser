@@ -32,3 +32,33 @@
     flex: 1;
     overflow: hidden;
 }
+
+.settingsAnchor {
+    position: relative;
+    margin-left: auto;
+}
+
+.dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 200px;
+    z-index: 10;
+}
+
+.checkboxRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--color-text);
+    cursor: pointer;
+    user-select: none;
+}

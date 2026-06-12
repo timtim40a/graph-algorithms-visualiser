@@ -1,5 +1,6 @@
 import { useGraphStore, type Tool } from './store/useGraphStore'
 import { CanvasViewport } from './ui/CanvasViewport'
+import { SettingsMenu } from './ui/SettingsMenu'
 import './styles/global.css'
 import styles from './styles/App.module.css'
 
@@ -30,6 +31,7 @@ export default function App() {
                         {t.label}
                     </button>
                 ))}
+                <SettingsMenu />
             </header>
             <main className={styles.main}>
                 <CanvasViewport />

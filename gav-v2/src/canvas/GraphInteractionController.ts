@@ -1,5 +1,6 @@
 import type { GraphData, SelectionState } from '../types'
-import type { Tool } from '../store/useGraphStore'
+import type { Settings, Tool } from '../store/useGraphStore'
+import { getNodeRadius } from '../core/graph-utils'
 import { hitTestEdge, hitTestNode } from './hitTest'
 import type { ViewportController } from './ViewportController'
 
@@ -9,6 +10,7 @@ interface StoreAccess {
     getGraph: () => GraphData
     getSelection: () => SelectionState
     getTool: () => Tool
+    getSettings: () => Settings
     setGraph: (g: GraphData) => void
     setSelection: (s: SelectionState) => void
 }
@@ -38,11 +40,15 @@ export class GraphInteractionController {
         const graph = this.store.getGraph()
         const selection = this.store.getSelection()
         const tool = this.store.getTool()
+        const settings = this.store.getSettings()
+
+        const findHitNode = () =>
+            graph.nodes.find((n) =>
+                hitTestNode(n, world.x, world.y, getNodeRadius(n.id, graph, settings)),
+            )
 
         if (tool === 'select') {
-            const hitNode = graph.nodes.find((n) =>
-                hitTestNode(n, world.x, world.y),
-            )
+            const hitNode = findHitNode()
             if (hitNode) {
                 this.store.setSelection({ nodeIds: [hitNode.id], edgeIds: [] })
                 this.isDragging = true
@@ -71,9 +77,7 @@ export class GraphInteractionController {
         }
 
         if (tool === 'addEdge') {
-            const hitNode = graph.nodes.find((n) =>
-                hitTestNode(n, world.x, world.y),
-            )
+            const hitNode = findHitNode()
             if (hitNode) {
                 if (
                     selection.nodeIds.length === 1 &&
@@ -101,9 +105,7 @@ export class GraphInteractionController {
         }
 
         if (tool === 'delete') {
-            const hitNode = graph.nodes.find((n) =>
-                hitTestNode(n, world.x, world.y),
-            )
+            const hitNode = findHitNode()
             if (hitNode) {
                 this.store.setGraph({
                     nodes: graph.nodes.filter((n) => n.id !== hitNode.id),
@@ -136,7 +138,11 @@ export class GraphInteractionController {
         const tool = this.store.getTool()
         const selection = this.store.getSelection()
 
-        if (tool === 'select' && selection.nodeIds.length > 0) {
+        if (
+            tool === 'select' &&
+            selection.nodeIds.length > 0 &&
+            this.store.getSettings().draggableNodes
+        ) {
             const nodeId = selection.nodeIds[0]
             const worldDx = dx / this.viewport.zoom
             const worldDy = dy / this.viewport.zoom
