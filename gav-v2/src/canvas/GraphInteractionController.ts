@@ -115,7 +115,14 @@ export class GraphInteractionController {
                             },
                         ],
                     });
-                    this.store.setSelection({ nodeIds: [], edgeIds: [] });
+                    if (settings.consecutiveEdgeCreation) {
+                        this.store.setSelection({
+                            nodeIds: [hitNode.id],
+                            edgeIds: [],
+                        });
+                    } else {
+                        this.store.setSelection({ nodeIds: [], edgeIds: [] });
+                    }
                 } else {
                     this.store.setSelection({
                         nodeIds: [hitNode.id],

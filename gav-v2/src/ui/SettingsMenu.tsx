@@ -64,6 +64,18 @@ export function SettingsMenu() {
                         />
                         Renamable nodes
                     </label>
+                    <label className={styles.checkboxRow}>
+                        <input
+                            type="checkbox"
+                            checked={settings.consecutiveEdgeCreation}
+                            onChange={(e) =>
+                                setSettings({
+                                    consecutiveEdgeCreation: e.target.checked,
+                                })
+                            }
+                        />
+                        Consecutive edge creation
+                    </label>
                 </div>
             )}
         </div>

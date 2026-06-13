@@ -7,6 +7,7 @@ export interface Settings {
     variableNodeSizes: boolean;
     draggableNodes: boolean;
     renamableNodes: boolean;
+    consecutiveEdgeCreation: boolean;
 }
 
 interface GraphStore {
@@ -28,6 +29,7 @@ const DEFAULT_SETTINGS: Settings = {
     variableNodeSizes: false,
     draggableNodes: true,
     renamableNodes: true,
+    consecutiveEdgeCreation: false,
 };
 
 export const useGraphStore = create<GraphStore>((set) => ({
